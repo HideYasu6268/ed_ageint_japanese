@@ -10,8 +10,10 @@ class ResearchManager:
     async def run(self, query: str):
         """ ディープリサーチの処理を実行し、状況の更新と最終レポートをyieldする """
         trace_id = gen_trace_id()
+        # 注意: メインモデルをGeminiに切り替えたためOpenAIのトレース機能は無効化されています
+        # (model_config.pyのset_tracing_disabled(True)を参照)。そのためtrace URLはもう開けません。
         with trace("Research trace", trace_id=trace_id):
-            yield f"Starting research. Trace: https://platform.openai.com/traces/trace?trace_id={trace_id}"
+            yield "Starting research..."
             search_plan = await self.plan_searches(query)
             yield f"Searches planned, starting {len(search_plan.searches)} searches..."     
             search_results = await self.perform_searches(search_plan)

@@ -33,7 +33,7 @@ translator = RemoteA2aAgent(
 )
 
 root_agent = LlmAgent(
-    model="gemini-3.1-flash-lite",
+    model="gemini-flash-latest",
     name="spanish_concierge",
     description="A concierge that answers in Spanish by delegating translation.",
     instruction=(

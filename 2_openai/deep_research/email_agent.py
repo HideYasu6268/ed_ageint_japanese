@@ -2,9 +2,9 @@ from agents import Agent, function_tool, ModelSettings
 from messenger import send_email, push
 import os
 from dotenv import load_dotenv
+from model_config import MODEL_NAME
 load_dotenv(override=True)
 
-MODEL_NAME = os.getenv("DEFAULT_MODEL_NAME", "gpt-5.4-mini")
 USE_EMAIL = os.getenv("USE_EMAIL", "true").lower() == "true"
 
 settings = ModelSettings(tool_choice="required")

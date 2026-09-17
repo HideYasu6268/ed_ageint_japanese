@@ -1,0 +1,4004 @@
+diff --git a/2_openai/1_lab1.ipynb b/2_openai/1_lab1.ipynb
+index 9f3a41d..214d9e7 100644
+--- a/2_openai/1_lab1.ipynb
++++ b/2_openai/1_lab1.ipynb
+@@ -22,6 +22,26 @@
+    "outputs": [],
+    "source": "# インポート\n\nimport os\nimport requests\nfrom dotenv import load_dotenv\nfrom openai.types.responses import ResponseTextDeltaEvent\nfrom agents import Agent, Runner, trace, function_tool, SQLiteSession\nload_dotenv(override=True)\n"
+   },
++  {
++   "cell_type": "code",
++   "execution_count": null,
++   "metadata": {},
++   "outputs": [],
++   "source": [
++    "# メインモデルをOpenAIからGeminiに切り替える\n",
++    "# (詳しくはguides/09_ai_apis_and_ollama.ipynbを参照)\n",
++    "\n",
++    "from openai import AsyncOpenAI\n",
++    "from agents import OpenAIChatCompletionsModel, set_tracing_disabled\n",
++    "\n",
++    "GEMINI_BASE_URL = \"https://generativelanguage.googleapis.com/v1beta/openai/\"\n",
++    "gemini_client = AsyncOpenAI(api_key=os.getenv(\"GOOGLE_API_KEY\"), base_url=GEMINI_BASE_URL)\n",
++    "MODEL_NAME = OpenAIChatCompletionsModel(model=\"gemini-flash-latest\", openai_client=gemini_client)\n",
++    "\n",
++    "# GeminiのキーではOpenAIのトレース機能(platform.openai.com/traces)は使えないため無効化\n",
++    "set_tracing_disabled(True)\n"
++   ]
++  },
+   {
+    "cell_type": "markdown",
+    "metadata": {},
+@@ -32,7 +52,12 @@
+    "execution_count": null,
+    "metadata": {},
+    "outputs": [],
+-   "source": "\n# name、instructions、modelを指定してエージェントを作成する\n\nagent = Agent(name=\"Jokester\", instructions=\"You are a joke teller\", model=\"gpt-5.4-mini\")"
++   "source": [
++    "\n",
++    "# name、instructions、modelを指定してエージェントを作成する\n",
++    "\n",
++    "agent = Agent(name=\"Jokester\", instructions=\"You are a joke teller\", model=MODEL_NAME)"
++   ]
+   },
+   {
+    "cell_type": "code",
+@@ -172,7 +197,7 @@
+    "outputs": [],
+    "source": [
+     "\n",
+-    "notifier = Agent(name=\"Notifier\", model=\"gpt-5.4-mini\", instructions=\"You notify the user upon request\", tools=[push_tool])"
++    "notifier = Agent(name=\"Notifier\", model=MODEL_NAME, instructions=\"You notify the user upon request\", tools=[push_tool])"
+    ]
+   },
+   {
+@@ -203,7 +228,7 @@
+    "metadata": {},
+    "outputs": [],
+    "source": [
+-    "agent = Agent(name=\"Assistant\", model=\"gpt-5.4-mini\")"
++    "agent = Agent(name=\"Assistant\", model=MODEL_NAME)"
+    ]
+   },
+   {
+diff --git a/2_openai/2_lab2.ipynb b/2_openai/2_lab2.ipynb
+index c7045a3..4b556a6 100644
+--- a/2_openai/2_lab2.ipynb
++++ b/2_openai/2_lab2.ipynb
+@@ -28,15 +28,20 @@
+    "source": [
+     "from dotenv import load_dotenv\n",
+     "import requests\n",
+-    "from agents import Agent, Runner, trace, function_tool, ModelSettings\n",
++    "from agents import Agent, Runner, trace, function_tool, ModelSettings, OpenAIChatCompletionsModel, set_tracing_disabled\n",
+     "from agents.extensions.visualization import draw_graph\n",
+     "from openai.types.responses import ResponseTextDeltaEvent\n",
++    "from openai import AsyncOpenAI\n",
+     "import os\n",
+     "import asyncio\n",
+     "import smtplib\n",
+     "from email.message import EmailMessage\n",
+     "load_dotenv(override=True)\n",
+-    "MODEL_NAME = \"gpt-5.4-mini\""
++    "# メインモデルをOpenAIからGeminiに切り替える\n",
++    "GEMINI_BASE_URL = \"https://generativelanguage.googleapis.com/v1beta/openai/\"\n",
++    "gemini_client = AsyncOpenAI(api_key=os.getenv(\"GOOGLE_API_KEY\"), base_url=GEMINI_BASE_URL)\n",
++    "MODEL_NAME = OpenAIChatCompletionsModel(model=\"gemini-flash-latest\", openai_client=gemini_client)\n",
++    "set_tracing_disabled(True)  # GeminiのキーではOpenAIのトレースは使えないため"
+    ]
+   },
+   {
+diff --git a/2_openai/3_lab3.ipynb b/2_openai/3_lab3.ipynb
+index 2dc721b..a0b8648 100644
+--- a/2_openai/3_lab3.ipynb
++++ b/2_openai/3_lab3.ipynb
+@@ -221,7 +221,7 @@
+     "3. Use your tool to send the best email (and only the best email) to the user. Only send 1 email.\n",
+     "\"\"\"\n",
+     "\n",
+-    "sales_manager = Agent(name=\"Sales Manager\", instructions=instructions, tools=tools, model=\"gpt-5.4-mini\")"
++    "sales_manager = Agent(name=\"Sales Manager\", instructions=instructions, tools=tools, model=gemini_model)"
+    ]
+   },
+   {
+@@ -293,7 +293,7 @@
+    "metadata": {},
+    "outputs": [],
+    "source": [
+-    "checker = Agent(name=\"Checker\", instructions=\"You review potential sales emails\", model=\"gpt-5.4-mini\", output_type=EmailReview)\n",
++    "checker = Agent(name=\"Checker\", instructions=\"You review potential sales emails\", model=gemini_model, output_type=EmailReview)\n",
+     "result = await Runner.run(checker, email)"
+    ]
+   },
+@@ -495,7 +495,7 @@
+    "metadata": {},
+    "outputs": [],
+    "source": [
+-    "agent = SandboxAgent(name=\"Engineer\", instructions=instructions, model=\"gpt-5.4-mini\", default_manifest=manifest, capabilities=capabilities)"
++    "agent = SandboxAgent(name=\"Engineer\", instructions=instructions, model=gemini_model, default_manifest=manifest, capabilities=capabilities)"
+    ]
+   },
+   {
+@@ -540,7 +540,7 @@
+    "metadata": {},
+    "outputs": [],
+    "source": [
+-    "agent = Agent(name=\"Expert\", instructions=\"Answer the question\", model=\"gpt-4o-mini\")\n",
++    "agent = Agent(name=\"Expert\", instructions=\"Answer the question\", model=gemini_model)\n",
+     "result = await Runner.run(agent, task)\n",
+     "print(result.final_output)"
+    ]
+@@ -555,7 +555,7 @@
+     "\n",
+     "\n",
+     "async with MCPServerStreamableHttp(name=\"Context7\", params=params) as server:\n",
+-    "    agent = Agent(name=\"Expert\", instructions=\"Use Context7 to answer the question\", mcp_servers=[server], model=\"gpt-4o-mini\")\n",
++    "    agent = Agent(name=\"Expert\", instructions=\"Use Context7 to answer the question\", mcp_servers=[server], model=gemini_model)\n",
+     "    result = await Runner.run(agent, task)\n",
+     "\n",
+     "print(result.final_output)"
+diff --git a/2_openai/4_lab4.ipynb b/2_openai/4_lab4.ipynb
+index c0c2f66..9b6b091 100644
+--- a/2_openai/4_lab4.ipynb
++++ b/2_openai/4_lab4.ipynb
+@@ -16,11 +16,13 @@
+    "metadata": {},
+    "outputs": [],
+    "source": [
+-    "from agents import Agent, WebSearchTool, trace, Runner, function_tool\n",
++    "from agents import Agent, WebSearchTool, trace, Runner, function_tool, OpenAIChatCompletionsModel, set_tracing_disabled\n",
+     "from agents.model_settings import ModelSettings\n",
+     "from pydantic import BaseModel, Field\n",
+     "from dotenv import load_dotenv\n",
++    "from openai import AsyncOpenAI\n",
+     "import asyncio\n",
++    "import os\n",
+     "from IPython.display import display, Markdown\n",
+     "from messenger import send_email, push"
+    ]
+@@ -39,7 +41,21 @@
+    "execution_count": null,
+    "metadata": {},
+    "outputs": [],
+-   "source": "# 定数\n\nMODEL_NAME = \"gpt-5.4-mini\"\nUSE_EMAIL = True\nHOW_MANY_SEARCHES = 5"
++   "source": [
++    "# 定数\n",
++    "\n",
++    "# メインモデルはGeminiに切り替え。ただしWebSearchTool()はOpenAIホストの専用ツールで\n",
++    "# GeminiのOpenAI互換エンドポイントでは使えないため、検索エージェントだけは\n",
++    "# 引き続きOpenAIのモデル(SEARCH_MODEL_NAME)を使う\n",
++    "GEMINI_BASE_URL = \"https://generativelanguage.googleapis.com/v1beta/openai/\"\n",
++    "gemini_client = AsyncOpenAI(api_key=os.getenv(\"GOOGLE_API_KEY\"), base_url=GEMINI_BASE_URL)\n",
++    "MODEL_NAME = OpenAIChatCompletionsModel(model=\"gemini-flash-latest\", openai_client=gemini_client)\n",
++    "SEARCH_MODEL_NAME = \"gpt-5.4-mini\"  # WebSearchTool用。OpenAIのモデルのまま\n",
++    "set_tracing_disabled(True)  # GeminiのキーではOpenAIのトレースは使えないため\n",
++    "\n",
++    "USE_EMAIL = True\n",
++    "HOW_MANY_SEARCHES = 5"
++   ]
+   },
+   {
+    "cell_type": "markdown",
+@@ -79,7 +95,7 @@
+    "metadata": {},
+    "outputs": [],
+    "source": [
+-    "search_agent = Agent(name=\"Search Agent\", instructions=INSTRUCTIONS, tools=tools, model=MODEL_NAME, model_settings=settings)"
++    "search_agent = Agent(name=\"Search Agent\", instructions=INSTRUCTIONS, tools=tools, model=SEARCH_MODEL_NAME, model_settings=settings)"
+    ]
+   },
+   {
+diff --git a/2_openai/deep_research/email_agent.py b/2_openai/deep_research/email_agent.py
+index 3af8beb..a5904c8 100644
+--- a/2_openai/deep_research/email_agent.py
++++ b/2_openai/deep_research/email_agent.py
+@@ -2,9 +2,9 @@ from agents import Agent, function_tool, ModelSettings
+ from messenger import send_email, push
+ import os
+ from dotenv import load_dotenv
++from model_config import MODEL_NAME
+ load_dotenv(override=True)
+ 
+-MODEL_NAME = os.getenv("DEFAULT_MODEL_NAME", "gpt-5.4-mini")
+ USE_EMAIL = os.getenv("USE_EMAIL", "true").lower() == "true"
+ 
+ settings = ModelSettings(tool_choice="required")
+diff --git a/2_openai/deep_research/model_config.py b/2_openai/deep_research/model_config.py
+new file mode 100644
+index 0000000..1228668
+--- /dev/null
++++ b/2_openai/deep_research/model_config.py
+@@ -0,0 +1,38 @@
++"""
++このコースのメインLLMをOpenAIからGeminiに切り替えるための共通設定。
++
++やっていることはシンプルです:
++1. GeminiのOpenAI互換エンドポイントを指す AsyncOpenAI クライアントを作る
++2. それをOpenAI Agents SDKの OpenAIChatCompletionsModel でラップする
++3. 各エージェントファイルはこの MODEL_NAME を import して使うだけでよい
++
++注意: search_agent.py だけは例外です。OpenAI Agents SDKの WebSearchTool は
++OpenAIがホストする専用ツールで、Responses API経由でしか動作しません。
++Geminiの Chat Completions 互換エンドポイントでは使えないため、
++search_agent.py は引き続きOpenAIのモデルを使うようにしてあります。
++（Web検索が必要な部分だけOpenAI、それ以外はGemini、という構成です）
++"""
++
++import os
++from dotenv import load_dotenv
++from openai import AsyncOpenAI
++from agents import OpenAIChatCompletionsModel, set_tracing_disabled
++
++load_dotenv(override=True)
++
++GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai/"
++
++google_api_key = os.getenv("GOOGLE_API_KEY")
++if not google_api_key:
++    raise ValueError("GOOGLE_API_KEY が.envに設定されていません。Google AI StudioでAPIキーを取得してください。")
++
++gemini_client = AsyncOpenAI(api_key=google_api_key, base_url=GEMINI_BASE_URL)
++
++# 使いたいGeminiモデルを変えたい場合は、.envに GEMINI_MODEL_NAME を設定してください
++GEMINI_MODEL_NAME = os.getenv("GEMINI_MODEL_NAME", "gemini-flash-latest")
++
++# このコースの「メインモデル」。各エージェントファイルはこれをimportして使う
++MODEL_NAME = OpenAIChatCompletionsModel(model=GEMINI_MODEL_NAME, openai_client=gemini_client)
++
++# GeminiのAPIキーではOpenAIのトレース機能(platform.openai.com/traces)は使えないため無効化
++set_tracing_disabled(True)
+diff --git a/2_openai/deep_research/planner_agent.py b/2_openai/deep_research/planner_agent.py
+index 89df7f0..fc2bc1e 100644
+--- a/2_openai/deep_research/planner_agent.py
++++ b/2_openai/deep_research/planner_agent.py
+@@ -2,9 +2,9 @@ from pydantic import BaseModel, Field
+ from agents import Agent
+ import os
+ from dotenv import load_dotenv
++from model_config import MODEL_NAME
+ load_dotenv(override=True)
+ 
+-MODEL_NAME = os.getenv("DEFAULT_MODEL_NAME", "gpt-5.4-mini")
+ HOW_MANY_SEARCHES = int(os.getenv("HOW_MANY_SEARCHES", 5))
+ 
+ 
+diff --git a/2_openai/deep_research/research_manager.py b/2_openai/deep_research/research_manager.py
+index 8ff7bd3..037d9b5 100644
+--- a/2_openai/deep_research/research_manager.py
++++ b/2_openai/deep_research/research_manager.py
+@@ -10,8 +10,10 @@ class ResearchManager:
+     async def run(self, query: str):
+         """ ディープリサーチの処理を実行し、状況の更新と最終レポートをyieldする """
+         trace_id = gen_trace_id()
++        # 注意: メインモデルをGeminiに切り替えたためOpenAIのトレース機能は無効化されています
++        # (model_config.pyのset_tracing_disabled(True)を参照)。そのためtrace URLはもう開けません。
+         with trace("Research trace", trace_id=trace_id):
+-            yield f"Starting research. Trace: https://platform.openai.com/traces/trace?trace_id={trace_id}"
++            yield "Starting research..."
+             search_plan = await self.plan_searches(query)
+             yield f"Searches planned, starting {len(search_plan.searches)} searches..."     
+             search_results = await self.perform_searches(search_plan)
+diff --git a/2_openai/deep_research/search_agent.py b/2_openai/deep_research/search_agent.py
+index a661a7e..c45dd30 100644
+--- a/2_openai/deep_research/search_agent.py
++++ b/2_openai/deep_research/search_agent.py
+@@ -3,7 +3,12 @@ from dotenv import load_dotenv
+ import os
+ 
+ load_dotenv(override=True)
+-MODEL_NAME = os.getenv("DEFAULT_MODEL_NAME", "gpt-5.4-mini")
++
++# 注意: このエージェントだけはOpenAIのモデルを使い続けます。
++# WebSearchTool()はOpenAIがホストする専用ツールで、Responses API経由でのみ動作し、
++# GeminiのOpenAI互換(Chat Completions)エンドポイントでは利用できないためです。
++# それ以外のエージェント(planner/writer/email)はGeminiに切り替え済みです。
++MODEL_NAME = os.getenv("OPENAI_MODEL_NAME", "gpt-5.4-mini")
+ 
+ INSTRUCTIONS = """
+ You are a research assistant. Given a search term, you search the web for that term and 
+diff --git a/2_openai/deep_research/writer_agent.py b/2_openai/deep_research/writer_agent.py
+index db730d1..f826bfe 100644
+--- a/2_openai/deep_research/writer_agent.py
++++ b/2_openai/deep_research/writer_agent.py
+@@ -2,9 +2,9 @@ from pydantic import BaseModel, Field
+ from agents import Agent
+ from dotenv import load_dotenv
+ import os
++from model_config import MODEL_NAME
+ 
+ load_dotenv(override=True)
+-MODEL_NAME = os.getenv("DEFAULT_MODEL_NAME", "gpt-5.4-mini")
+ 
+ INSTRUCTIONS = """
+ You are a senior researcher tasked with writing a cohesive report for a research query.
+diff --git a/4_langchain_langgraph/1_lab1.ipynb b/4_langchain_langgraph/1_lab1.ipynb
+index 57ee6ab..b44a30e 100644
+--- a/4_langchain_langgraph/1_lab1.ipynb
++++ b/4_langchain_langgraph/1_lab1.ipynb
+@@ -34,6 +34,7 @@
+     "import os\n",
+     "from dotenv import load_dotenv\n",
+     "from langchain_openai import ChatOpenAI\n",
++    "from langchain_google_genai import ChatGoogleGenerativeAI  # メインモデルをGeminiに切り替えるため\n",
+     "from langchain_core.messages import HumanMessage, SystemMessage, ToolMessage\n",
+     "from langchain_core.tools import tool\n",
+     "from pydantic import BaseModel, Field\n",
+@@ -54,7 +55,7 @@
+    "metadata": {},
+    "outputs": [],
+    "source": [
+-    "llm = ChatOpenAI(model=\"gpt-5.4-mini\")\n",
++    "llm = ChatGoogleGenerativeAI(model=\"gemini-flash-latest\")\n",
+     "\n",
+     "message = \"In 1 sentence, what does it mean for an AI Agent to be autonomous\"\n",
+     "\n",
+diff --git a/4_langchain_langgraph/2_lab2.ipynb b/4_langchain_langgraph/2_lab2.ipynb
+index c216fbc..2151aa1 100644
+--- a/4_langchain_langgraph/2_lab2.ipynb
++++ b/4_langchain_langgraph/2_lab2.ipynb
+@@ -24,7 +24,30 @@
+    "id": "3b013671",
+    "metadata": {},
+    "outputs": [],
+-   "source": "# いつも通り、まずはインポートと環境設定から\n\nimport os\nimport random\nimport requests\nfrom typing import Annotated\nfrom typing_extensions import TypedDict\nfrom dotenv import load_dotenv\nfrom IPython.display import Image, display\nimport gradio as gr\nfrom langchain_openai import ChatOpenAI\nfrom langchain_community.tools import GoogleSerperRun\nfrom langchain_community.utilities import GoogleSerperAPIWrapper\nfrom langchain_core.tools import tool\nfrom langgraph.graph import StateGraph, START, END\nfrom langgraph.graph.message import add_messages\nfrom langgraph.prebuilt import ToolNode, tools_condition\nfrom langgraph.checkpoint.memory import MemorySaver\nfrom langgraph.checkpoint.sqlite import SqliteSaver\n\nload_dotenv(override=True)"
++   "source": [
++    "# いつも通り、まずはインポートと環境設定から\n",
++    "\n",
++    "import os\n",
++    "import random\n",
++    "import requests\n",
++    "from typing import Annotated\n",
++    "from typing_extensions import TypedDict\n",
++    "from dotenv import load_dotenv\n",
++    "from IPython.display import Image, display\n",
++    "import gradio as gr\n",
++    "from langchain_openai import ChatOpenAI\n",
++    "from langchain_google_genai import ChatGoogleGenerativeAI  # メインモデルをGeminiに切り替えるため\n",
++    "from langchain_community.tools import GoogleSerperRun\n",
++    "from langchain_community.utilities import GoogleSerperAPIWrapper\n",
++    "from langchain_core.tools import tool\n",
++    "from langgraph.graph import StateGraph, START, END\n",
++    "from langgraph.graph.message import add_messages\n",
++    "from langgraph.prebuilt import ToolNode, tools_condition\n",
++    "from langgraph.checkpoint.memory import MemorySaver\n",
++    "from langgraph.checkpoint.sqlite import SqliteSaver\n",
++    "\n",
++    "load_dotenv(override=True)"
++   ]
+   },
+   {
+    "cell_type": "markdown",
+@@ -96,7 +119,7 @@
+    "metadata": {},
+    "outputs": [],
+    "source": [
+-    "llm = ChatOpenAI(model=\"gpt-5.4-mini\")\n",
++    "llm = ChatGoogleGenerativeAI(model=\"gemini-flash-latest\")\n",
+     "\n",
+     "def chatbot_node(state: State) -> dict:\n",
+     "    return {\"messages\": [llm.invoke(state[\"messages\"])]}\n",
+diff --git a/4_langchain_langgraph/3_lab3.ipynb b/4_langchain_langgraph/3_lab3.ipynb
+index 25c9e66..4d158c8 100644
+--- a/4_langchain_langgraph/3_lab3.ipynb
++++ b/4_langchain_langgraph/3_lab3.ipynb
+@@ -28,7 +28,7 @@
+    "outputs": [],
+    "source": [
+     "agent = create_agent(\n",
+-    "    model=\"openai:gpt-5.4-mini\",\n",
++    "    model=\"google_genai:gemini-flash-latest\",\n",
+     "    system_prompt=\"You are a helpful assistant who answers concisely.\",\n",
+     ")\n",
+     "\n",
+@@ -79,7 +79,7 @@
+     "    return pretend.get(city, \"unknown\")\n",
+     "\n",
+     "agent = create_agent(\n",
+-    "    model=\"openai:gpt-5.4-mini\",\n",
++    "    model=\"google_genai:gemini-flash-latest\",\n",
+     "    tools=[get_weather, get_population],\n",
+     "    system_prompt=\"You are a travel assistant. Use your tools to answer questions about cities.\",\n",
+     ")\n",
+@@ -118,7 +118,7 @@
+    "outputs": [],
+    "source": [
+     "memory_agent = create_agent(\n",
+-    "    model=\"openai:gpt-5.4-mini\",\n",
++    "    model=\"google_genai:gemini-flash-latest\",\n",
+     "    tools=[get_weather],\n",
+     "    checkpointer=MemorySaver(),\n",
+     "    system_prompt=\"You are a travel assistant. Use your tools to answer questions about cities.\",\n",
+@@ -149,7 +149,7 @@
+     "    population: str = Field(description=\"The population\")\n",
+     "\n",
+     "report_agent = create_agent(\n",
+-    "    model=\"openai:gpt-5.4-mini\",\n",
++    "    model=\"google_genai:gemini-flash-latest\",\n",
+     "    tools=[get_weather, get_population],\n",
+     "    response_format=CityReport,\n",
+     ")\n",
+@@ -180,7 +180,7 @@
+     "    return handler(request)\n",
+     "\n",
+     "watched_agent = create_agent(\n",
+-    "    model=\"openai:gpt-5.4-mini\",\n",
++    "    model=\"google_genai:gemini-flash-latest\",\n",
+     "    tools=[get_weather, get_population],\n",
+     "    system_prompt=\"You are a travel assistant. Use your tools.\",\n",
+     "    middleware=[log_tool_calls],\n",
+@@ -297,7 +297,7 @@
+    "outputs": [],
+    "source": [
+     "browser_agent = create_agent(\n",
+-    "    model=\"openai:gpt-5.5\",\n",
++    "    model=\"google_genai:gemini-flash-latest\",\n",
+     "    tools=browser_tools,\n",
+     "    system_prompt=\"You are a web research assistant. Use the browser tools to complete the task, then report clearly.\",\n",
+     ")\n",
+diff --git a/4_langchain_langgraph/4_lab4.ipynb b/4_langchain_langgraph/4_lab4.ipynb
+index 33f2a8c..747b695 100644
+--- a/4_langchain_langgraph/4_lab4.ipynb
++++ b/4_langchain_langgraph/4_lab4.ipynb
+@@ -24,7 +24,20 @@
+    "id": "4aa51d56",
+    "metadata": {},
+    "outputs": [],
+-   "source": "# まずはインポートと環境設定\n\nimport os\nfrom dotenv import load_dotenv\nfrom langchain_openai import ChatOpenAI\nfrom langchain_community.tools import GoogleSerperRun\nfrom langchain_community.utilities import GoogleSerperAPIWrapper\nfrom deepagents import create_deep_agent\nfrom deepagents.backends import FilesystemBackend\n\nload_dotenv(override=True)"
++   "source": [
++    "# まずはインポートと環境設定\n",
++    "\n",
++    "import os\n",
++    "from dotenv import load_dotenv\n",
++    "from langchain_openai import ChatOpenAI\n",
++    "from langchain_google_genai import ChatGoogleGenerativeAI  # メインモデルをGeminiに切り替えるため\n",
++    "from langchain_community.tools import GoogleSerperRun\n",
++    "from langchain_community.utilities import GoogleSerperAPIWrapper\n",
++    "from deepagents import create_deep_agent\n",
++    "from deepagents.backends import FilesystemBackend\n",
++    "\n",
++    "load_dotenv(override=True)"
++   ]
+   },
+   {
+    "cell_type": "markdown",
+@@ -58,7 +71,7 @@
+     "sandbox = os.path.abspath(\"sandbox\")\n",
+     "os.makedirs(sandbox, exist_ok=True)\n",
+     "\n",
+-    "model = ChatOpenAI(model=\"gpt-5.4-mini\")\n",
++    "model = ChatGoogleGenerativeAI(model=\"gemini-flash-latest\")\n",
+     "\n",
+     "researcher = create_deep_agent(\n",
+     "    model=model,\n",
+diff --git a/4_langchain_langgraph/5_lab5.ipynb b/4_langchain_langgraph/5_lab5.ipynb
+index 56cc89c..41cc133 100644
+--- a/4_langchain_langgraph/5_lab5.ipynb
++++ b/4_langchain_langgraph/5_lab5.ipynb
+@@ -87,7 +87,7 @@
+    "outputs": [],
+    "source": [
+     "simple_worker = create_agent(\n",
+-    "    model=\"openai:gpt-5.4-mini\",\n",
++    "    model=\"google_genai:gemini-flash-latest\",\n",
+     "    tools=[search, send_push_notification, wikipedia_lookup],\n",
+     "    system_prompt=\"You are Sidekick, a helpful personal assistant. Use your tools to complete the task.\",\n",
+     "    checkpointer=InMemorySaver(),\n",
+@@ -140,7 +140,7 @@
+     "    return f\"Meeting booked with {person} on {day}.\"\n",
+     "\n",
+     "approval_agent = create_agent(\n",
+-    "    model=\"openai:gpt-5.4-mini\",\n",
++    "    model=\"google_genai:gemini-flash-latest\",\n",
+     "    tools=[book_meeting],\n",
+     "    system_prompt=\"You are a scheduling assistant. Use the book_meeting tool.\",\n",
+     "    middleware=[HumanInTheLoopMiddleware(interrupt_on={\"book_meeting\": True})],\n",
+diff --git a/4_langchain_langgraph/sidekick.py b/4_langchain_langgraph/sidekick.py
+index e519e6c..e91ea6e 100644
+--- a/4_langchain_langgraph/sidekick.py
++++ b/4_langchain_langgraph/sidekick.py
+@@ -14,7 +14,7 @@ from datetime import datetime
+ 
+ from dotenv import load_dotenv
+ from pydantic import BaseModel, Field
+-from langchain_openai import ChatOpenAI
++from langchain_google_genai import ChatGoogleGenerativeAI  # メインモデルをGeminiに切り替えるため
+ from langchain.agents import create_agent
+ from langchain.agents.middleware import (
+     AgentMiddleware,
+@@ -91,7 +91,7 @@ class Sidekick:
+         os.makedirs(SANDBOX, exist_ok=True)
+         self.tools, self.sessions = await get_all_tools(SANDBOX)
+         self.worker = create_agent(
+-            model="openai:gpt-5.4-mini",
++            model="google_genai:gemini-flash-latest",
+             tools=self.tools,
+             system_prompt=f"{WORKER_PROMPT}\nToday is {datetime.now():%A %d %B %Y}.",
+             middleware=[
+@@ -106,7 +106,7 @@ class Sidekick:
+             ],
+             checkpointer=self.memory,
+         )
+-        self.evaluator = ChatOpenAI(model="gpt-5.4-mini").with_structured_output(EvaluatorOutput)
++        self.evaluator = ChatGoogleGenerativeAI(model="gemini-flash-latest").with_structured_output(EvaluatorOutput)
+ 
+     async def evaluate(
+         self, message: str, success_criteria: str, last_reply: str, tools_used: list[str]
+diff --git a/5_agent_frameworks/1_google_adk_a2a/a2a_demo/server.py b/5_agent_frameworks/1_google_adk_a2a/a2a_demo/server.py
+index 7f4411a..c022d89 100644
+--- a/5_agent_frameworks/1_google_adk_a2a/a2a_demo/server.py
++++ b/5_agent_frameworks/1_google_adk_a2a/a2a_demo/server.py
+@@ -24,7 +24,7 @@ from google.adk.agents import LlmAgent  # noqa: E402
+ from google.adk.a2a.utils.agent_to_a2a import to_a2a  # noqa: E402
+ 
+ root_agent = LlmAgent(
+-    model="gemini-3.1-flash-lite",
++    model="gemini-flash-latest",
+     name="translator_agent",
+     description="Translates English text into Spanish.",
+     instruction=(
+diff --git a/5_agent_frameworks/1_google_adk_a2a/a2a_demo/spanish_concierge/agent.py b/5_agent_frameworks/1_google_adk_a2a/a2a_demo/spanish_concierge/agent.py
+index 91a43be..eeb9ea4 100644
+--- a/5_agent_frameworks/1_google_adk_a2a/a2a_demo/spanish_concierge/agent.py
++++ b/5_agent_frameworks/1_google_adk_a2a/a2a_demo/spanish_concierge/agent.py
+@@ -33,7 +33,7 @@ translator = RemoteA2aAgent(
+ )
+ 
+ root_agent = LlmAgent(
+-    model="gemini-3.1-flash-lite",
++    model="gemini-flash-latest",
+     name="spanish_concierge",
+     description="A concierge that answers in Spanish by delegating translation.",
+     instruction=(
+diff --git a/5_agent_frameworks/1_google_adk_a2a/lab.ipynb b/5_agent_frameworks/1_google_adk_a2a/lab.ipynb
+index ca85ec7..0c0cd74 100644
+--- a/5_agent_frameworks/1_google_adk_a2a/lab.ipynb
++++ b/5_agent_frameworks/1_google_adk_a2a/lab.ipynb
+@@ -59,7 +59,7 @@
+    },
+    "outputs": [],
+    "source": [
+-    "MODEL = \"gemini-3.1-flash-lite\"\n",
++    "MODEL = \"gemini-flash-latest\"\n",
+     "\n",
+     "agent = LlmAgent(\n",
+     "    model=MODEL,\n",
+diff --git a/5_agent_frameworks/1_google_adk_a2a/task_worker/agent.py b/5_agent_frameworks/1_google_adk_a2a/task_worker/agent.py
+index 4ee7335..cc0dd40 100644
+--- a/5_agent_frameworks/1_google_adk_a2a/task_worker/agent.py
++++ b/5_agent_frameworks/1_google_adk_a2a/task_worker/agent.py
+@@ -27,7 +27,7 @@ from mcp import StdioServerParameters  # noqa: E402
+ load_dotenv(override=True)
+ os.environ.setdefault("GOOGLE_GENAI_USE_VERTEXAI", "FALSE")
+ 
+-MODEL = "gemini-3.1-flash-lite"
++MODEL = "gemini-flash-latest"
+ WORKSPACE = Path(__file__).resolve().parent / "workspace"
+ WORKSPACE.mkdir(exist_ok=True)
+ 
+diff --git a/5_agent_frameworks/2_strands_pydantic/pydantic_lab.ipynb b/5_agent_frameworks/2_strands_pydantic/pydantic_lab.ipynb
+index 94e0bac..93214a1 100644
+--- a/5_agent_frameworks/2_strands_pydantic/pydantic_lab.ipynb
++++ b/5_agent_frameworks/2_strands_pydantic/pydantic_lab.ipynb
+@@ -22,7 +22,22 @@
+    "cell_type": "markdown",
+    "id": "8bf2b6d1",
+    "metadata": {},
+-   "source": "## セットアップ\n\n今日必要なものは2つですが、どちらも以前の週からすでに用意されています。\n\n- **Node**。`npx` のために必要です(filesystem MCP サーバーはこれを使って動きます)。`node --version` で確認してください。\n- リポジトリのルートにある `.env` の中の **`OPENAI_API_KEY`**。今日のフレームワークは OpenAI の `gpt-5.4-mini` を使いますが、そのキーは Week 1 以来ずっと `.env` にあるはずです。\n\nPydantic AI はリポジトリの環境に含まれているので、リポジトリのルートで通常の `uv sync` を実行すればすべてインストールされます。このノートブックを Cursor で開き、毎週使っているリポジトリ既定の **Python 3.12.12** カーネルを選んで、上から順にセルを実行してください。\n\n最初の実行を速くするために、今のうちに一度 filesystem MCP サーバーをウォームアップしておき、動作中と表示されたらすぐに Ctrl-C で止めてください。\n\n```bash\nnpx -y @modelcontextprotocol/server-filesystem .\n```"
++   "source": [
++    "## セットアップ\n",
++    "\n",
++    "今日必要なものは2つですが、どちらも以前の週からすでに用意されています。\n",
++    "\n",
++    "- **Node**。`npx` のために必要です(filesystem MCP サーバーはこれを使って動きます)。`node --version` で確認してください。\n",
++    "- リポジトリのルートにある `.env` の中の **`GOOGLE_API_KEY`**。今日のフレームワークは Gemini の `gemini-flash-latest` を、GeminiのOpenAI互換エンドポイント経由で使います。\n",
++    "\n",
++    "Pydantic AI はリポジトリの環境に含まれているので、リポジトリのルートで通常の `uv sync` を実行すればすべてインストールされます。このノートブックを Cursor で開き、毎週使っているリポジトリ既定の **Python 3.12.12** カーネルを選んで、上から順にセルを実行してください。\n",
++    "\n",
++    "最初の実行を速くするために、今のうちに一度 filesystem MCP サーバーをウォームアップしておき、動作中と表示されたらすぐに Ctrl-C で止めてください。\n",
++    "\n",
++    "```bash\n",
++    "npx -y @modelcontextprotocol/server-filesystem .\n",
++    "```"
++   ]
+   },
+   {
+    "cell_type": "code",
+@@ -44,6 +59,8 @@
+     "from dotenv import load_dotenv\n",
+     "from pydantic_ai import Agent\n",
+     "from pydantic_ai.mcp import MCPToolset\n",
++    "from pydantic_ai.models.openai import OpenAIChatModel\n",
++    "from pydantic_ai.providers.openai import OpenAIProvider\n",
+     "from fastmcp.client.transports import StdioTransport\n",
+     "\n",
+     "load_dotenv(override=True)"
+@@ -53,7 +70,11 @@
+    "cell_type": "markdown",
+    "id": "3db50004",
+    "metadata": {},
+-   "source": "## ステップ1: エージェントを作る\n\nPydantic AI では、エージェントは `Agent` です。モデルを表す文字列と、システムプロンプトである `instructions` を持ちます。文字列 `\"openai-chat:gpt-5.4-mini\"` はプロバイダーとモデルを指定し、`OPENAI_API_KEY` はリポジトリルートの `.env` から読み込まれます。`-chat` は OpenAI の Chat Completions API を明示的に指名しています。単に `openai:` と書いても動きますが、そのデフォルトは今後の Pydantic AI v2 で変わる予定です。Chat Completions は、OpenAI 互換のすべてのエンドポイントが話す API であり、それこそ今日の最後に行うモデルの切り替えで必要になるものです。"
++   "source": [
++    "## ステップ1: エージェントを作る\n",
++    "\n",
++    "Pydantic AI では、エージェントは `Agent` です。モデルを表す文字列と、システムプロンプトである `instructions` を持ちます。ここではモデルを `OpenAIChatModel` として組み立て、GeminiのOpenAI互換(Chat Completions)エンドポイントを指す `OpenAIProvider` を渡しています。`GOOGLE_API_KEY` はリポジトリルートの `.env` から読み込まれます。Chat Completionsは、OpenAI互換のすべてのエンドポイントが話すAPIです。"
++   ]
+   },
+   {
+    "cell_type": "code",
+@@ -69,7 +90,14 @@
+    },
+    "outputs": [],
+    "source": [
+-    "MODEL = \"openai-chat:gpt-5.4-mini\"\n",
++    "# メインモデルをOpenAIからGeminiに切り替え(GeminiのOpenAI互換エンドポイント経由)\n",
++    "MODEL = OpenAIChatModel(\n",
++    "    \"gemini-flash-latest\",\n",
++    "    provider=OpenAIProvider(\n",
++    "        base_url=\"https://generativelanguage.googleapis.com/v1beta/openai/\",\n",
++    "        api_key=os.environ[\"GOOGLE_API_KEY\"],\n",
++    "    ),\n",
++    ")\n",
+     "\n",
+     "agent = Agent(\n",
+     "    MODEL,\n",
+diff --git a/5_agent_frameworks/2_strands_pydantic/pydantic_worker.py b/5_agent_frameworks/2_strands_pydantic/pydantic_worker.py
+index 78a3793..d989cc4 100644
+--- a/5_agent_frameworks/2_strands_pydantic/pydantic_worker.py
++++ b/5_agent_frameworks/2_strands_pydantic/pydantic_worker.py
+@@ -28,13 +28,22 @@ if TASK_ID is not None:
+ from dotenv import load_dotenv  # noqa: E402
+ from pydantic_ai import Agent  # noqa: E402
+ from pydantic_ai.mcp import MCPToolset  # noqa: E402
++from pydantic_ai.models.openai import OpenAIChatModel  # noqa: E402
++from pydantic_ai.providers.openai import OpenAIProvider  # noqa: E402
+ from fastmcp.client.transports import StdioTransport  # noqa: E402
+ 
+ import board  # noqa: E402
+ 
+ load_dotenv(override=True)
+ 
+-MODEL = f"openai-chat:{os.environ.get('WORKER_MODEL', 'gpt-5.4-mini')}"
++# メインモデルをOpenAIからGeminiに切り替え(GeminiのOpenAI互換エンドポイント経由)
++MODEL = OpenAIChatModel(
++    os.environ.get("WORKER_MODEL", "gemini-flash-latest"),
++    provider=OpenAIProvider(
++        base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
++        api_key=os.environ["GOOGLE_API_KEY"],
++    ),
++)
+ WORKSPACE = Path(__file__).resolve().parent / "workspace"
+ GOAL = "Read notes.txt, translate its contents into natural Spanish, and write the Spanish to spanish.txt."
+ # ファイルツールが書き込める場所: 単体実行時はこのワーカー自身のworkspace、Day5のタスクを
+diff --git a/5_agent_frameworks/2_strands_pydantic/strands_lab.ipynb b/5_agent_frameworks/2_strands_pydantic/strands_lab.ipynb
+index 4d63d26..9c0fcd0 100644
+--- a/5_agent_frameworks/2_strands_pydantic/strands_lab.ipynb
++++ b/5_agent_frameworks/2_strands_pydantic/strands_lab.ipynb
+@@ -22,7 +22,22 @@
+    "cell_type": "markdown",
+    "id": "0d3eae11",
+    "metadata": {},
+-   "source": "## セットアップ\n\n今日必要なものは2つですが、どちらも以前の週からすでに用意されています。\n\n- **Node**。`npx` のために必要です(filesystem MCP サーバーはこれを使って動きます)。`node --version` で確認してください。\n- リポジトリのルートにある `.env` の中の **`OPENAI_API_KEY`**。今日のフレームワークは OpenAI の `gpt-5.4-mini` を使いますが、そのキーは Week 1 以来ずっと `.env` にあるはずです。\n\nStrands はリポジトリの環境に含まれているので、リポジトリのルートで通常の `uv sync` を実行すればすべてインストールされます。このノートブックを Cursor で開き、毎週使っているリポジトリ既定の **Python 3.12.12** カーネルを選んで、上から順にセルを実行してください。\n\n最初の実行を速くするために、今のうちに一度 filesystem MCP サーバーをウォームアップしておき、動作中と表示されたらすぐに Ctrl-C で止めてください。\n\n```bash\nnpx -y @modelcontextprotocol/server-filesystem .\n```"
++   "source": [
++    "## セットアップ\n",
++    "\n",
++    "今日必要なものは2つですが、どちらも以前の週からすでに用意されています。\n",
++    "\n",
++    "- **Node**。`npx` のために必要です(filesystem MCP サーバーはこれを使って動きます)。`node --version` で確認してください。\n",
++    "- リポジトリのルートにある `.env` の中の **`GOOGLE_API_KEY`**。今日のフレームワークは Gemini の `gemini-flash-latest` を、GeminiのOpenAI互換エンドポイント経由で使います。\n",
++    "\n",
++    "Strands はリポジトリの環境に含まれているので、リポジトリのルートで通常の `uv sync` を実行すればすべてインストールされます。このノートブックを Cursor で開き、毎週使っているリポジトリ既定の **Python 3.12.12** カーネルを選んで、上から順にセルを実行してください。\n",
++    "\n",
++    "最初の実行を速くするために、今のうちに一度 filesystem MCP サーバーをウォームアップしておき、動作中と表示されたらすぐに Ctrl-C で止めてください。\n",
++    "\n",
++    "```bash\n",
++    "npx -y @modelcontextprotocol/server-filesystem .\n",
++    "```"
++   ]
+   },
+   {
+    "cell_type": "code",
+@@ -55,7 +70,11 @@
+    "cell_type": "markdown",
+    "id": "784efc98",
+    "metadata": {},
+-   "source": "## ステップ1: エージェントを作る\n\nStrands では、エージェントは `Agent` です。モデルと `system_prompt` を持ちます。ここではモデルを `gpt-5.4-mini` を指す `OpenAIModel` として一度だけ組み立て、それをどこでも再利用します。最初に知っておくべきことがひとつあります。モデルを指定しない素の `Agent()` は、こっそり AWS Bedrock をデフォルトとして使おうとし、AWS の認証情報を期待します。そのため、ここでは常に `model=` を明示的に渡します。"
++   "source": [
++    "## ステップ1: エージェントを作る\n",
++    "\n",
++    "Strands では、エージェントは `Agent` です。モデルと `system_prompt` を持ちます。ここではモデルを、GeminiのOpenAI互換エンドポイントを指す `OpenAIModel` として一度だけ組み立て、それをどこでも再利用します。最初に知っておくべきことがひとつあります。モデルを指定しない素の `Agent()` は、こっそり AWS Bedrock をデフォルトとして使おうとし、AWS の認証情報を期待します。そのため、ここでは常に `model=` を明示的に渡します。"
++   ]
+   },
+   {
+    "cell_type": "code",
+@@ -71,9 +90,16 @@
+    },
+    "outputs": [],
+    "source": [
+-    "MODEL = \"gpt-5.4-mini\"\n",
++    "MODEL = \"gemini-flash-latest\"\n",
+     "\n",
+-    "model = OpenAIModel(client_args={\"api_key\": os.environ[\"OPENAI_API_KEY\"]}, model_id=MODEL)\n",
++    "# メインモデルをOpenAIからGeminiに切り替え(GeminiのOpenAI互換エンドポイント経由)\n",
++    "model = OpenAIModel(\n",
++    "    client_args={\n",
++    "        \"api_key\": os.environ[\"GOOGLE_API_KEY\"],\n",
++    "        \"base_url\": \"https://generativelanguage.googleapis.com/v1beta/openai/\",\n",
++    "    },\n",
++    "    model_id=MODEL,\n",
++    ")\n",
+     "\n",
+     "agent = Agent(\n",
+     "    model=model,\n",
+diff --git a/5_agent_frameworks/2_strands_pydantic/strands_worker.py b/5_agent_frameworks/2_strands_pydantic/strands_worker.py
+index 2d9e0df..5725c16 100644
+--- a/5_agent_frameworks/2_strands_pydantic/strands_worker.py
++++ b/5_agent_frameworks/2_strands_pydantic/strands_worker.py
+@@ -36,14 +36,21 @@ import board  # noqa: E402
+ 
+ load_dotenv(override=True)
+ 
+-MODEL = os.environ.get("WORKER_MODEL", "gpt-5.4-mini")
++MODEL = os.environ.get("WORKER_MODEL", "gemini-flash-latest")
+ WORKSPACE = Path(__file__).resolve().parent / "workspace"
+ GOAL = "Read notes.txt, translate its contents into natural Spanish, and write the Spanish to spanish.txt."
+ # ファイルツールが書き込める場所: 単体実行時はこのワーカー自身のworkspace、Day5のタスクを
+ # 作業しているときは共有の場所(ボードファイルのフォルダ)。
+ WORK_DIR = WORKSPACE if TASK_ID is None else Path(sys.argv[2]).resolve().parent
+ 
+-model = OpenAIModel(client_args={"api_key": os.environ["OPENAI_API_KEY"]}, model_id=MODEL)
++# メインモデルをOpenAIからGeminiに切り替え(GeminiのOpenAI互換エンドポイント経由)
++model = OpenAIModel(
++    client_args={
++        "api_key": os.environ["GOOGLE_API_KEY"],
++        "base_url": "https://generativelanguage.googleapis.com/v1beta/openai/",
++    },
++    model_id=MODEL,
++)
+ 
+ 
+ @tool
+diff --git a/5_agent_frameworks/3_maf_agno/agno_lab.ipynb b/5_agent_frameworks/3_maf_agno/agno_lab.ipynb
+index 1014335..9adf13d 100644
+--- a/5_agent_frameworks/3_maf_agno/agno_lab.ipynb
++++ b/5_agent_frameworks/3_maf_agno/agno_lab.ipynb
+@@ -22,7 +22,22 @@
+    "cell_type": "markdown",
+    "id": "a5034792",
+    "metadata": {},
+-   "source": "## セットアップ\n\n今日必要なものは2つですが、どちらも以前の週からすでに用意されています。\n\n- **Node**。`npx` のために必要です(filesystem MCP サーバーはこれを使って動きます)。`node --version` で確認してください。\n- リポジトリのルートにある `.env` の中の **`OPENAI_API_KEY`**。今日のフレームワークは OpenAI の `gpt-5.4-mini` を使いますが、そのキーは Week 1 以来ずっと `.env` にあるはずです。\n\nAgno はリポジトリの環境に含まれているので、リポジトリのルートで通常の `uv sync` を実行すればすべてインストールされます。このノートブックを Cursor で開き、毎週使っているリポジトリ既定の **Python 3.12.12** カーネルを選んで、上から順にセルを実行してください。\n\n最初の実行を速くするために、今のうちに一度 filesystem MCP サーバーをウォームアップしておき、動作中と表示されたらすぐに Ctrl-C で止めてください。\n\n```bash\nnpx -y @modelcontextprotocol/server-filesystem .\n```"
++   "source": [
++    "## セットアップ\n",
++    "\n",
++    "今日必要なものは2つですが、どちらも以前の週からすでに用意されています。\n",
++    "\n",
++    "- **Node**。`npx` のために必要です(filesystem MCP サーバーはこれを使って動きます)。`node --version` で確認してください。\n",
++    "- リポジトリのルートにある `.env` の中の **`GOOGLE_API_KEY`**。今日のフレームワークは Gemini の `gemini-flash-latest` を、GeminiのOpenAI互換エンドポイント経由で使います。\n",
++    "\n",
++    "Agno はリポジトリの環境に含まれているので、リポジトリのルートで通常の `uv sync` を実行すればすべてインストールされます。このノートブックを Cursor で開き、毎週使っているリポジトリ既定の **Python 3.12.12** カーネルを選んで、上から順にセルを実行してください。\n",
++    "\n",
++    "最初の実行を速くするために、今のうちに一度 filesystem MCP サーバーをウォームアップしておき、動作中と表示されたらすぐに Ctrl-C で止めてください。\n",
++    "\n",
++    "```bash\n",
++    "npx -y @modelcontextprotocol/server-filesystem .\n",
++    "```"
++   ]
+   },
+   {
+    "cell_type": "code",
+@@ -39,12 +54,13 @@
+    "outputs": [],
+    "source": [
+     "import functools\n",
++    "import os\n",
+     "import subprocess\n",
+     "from pathlib import Path\n",
+     "\n",
+     "from dotenv import load_dotenv\n",
+     "from agno.agent import Agent\n",
+-    "from agno.models.openai import OpenAIChat\n",
++    "from agno.models.openai.like import OpenAILike\n",
+     "from agno.tools.mcp import MCPTools\n",
+     "from mcp import StdioServerParameters\n",
+     "\n",
+@@ -55,7 +71,11 @@
+    "cell_type": "markdown",
+    "id": "452205dd",
+    "metadata": {},
+-   "source": "## ステップ1: エージェントを作る\n\nAgno では、エージェントは `Agent` です。`model` と、システムプロンプトである `instructions` を持ちます。ここではモデルを `gpt-5.4-mini` を指す `OpenAIChat` として一度だけ組み立て、環境変数から `OPENAI_API_KEY` を読み込み、それを再利用します。Agno には同期的な経路もありますが、後で MCP を接続するとエージェントが非同期になるため、ノートブック全体で一貫した見え方になるよう、ずっと `arun` で `await` します。"
++   "source": [
++    "## ステップ1: エージェントを作る\n",
++    "\n",
++    "Agno では、エージェントは `Agent` です。`model` と、システムプロンプトである `instructions` を持ちます。ここではモデルを、GeminiのOpenAI互換エンドポイントを指す `OpenAILike` として一度だけ組み立て、環境変数から `GOOGLE_API_KEY` を読み込み、それを再利用します。Agno には同期的な経路もありますが、後で MCP を接続するとエージェントが非同期になるため、ノートブック全体で一貫した見え方になるよう、ずっと `arun` で `await` します。"
++   ]
+   },
+   {
+    "cell_type": "code",
+@@ -71,9 +91,14 @@
+    },
+    "outputs": [],
+    "source": [
+-    "MODEL = \"gpt-5.4-mini\"\n",
++    "MODEL = \"gemini-flash-latest\"\n",
+     "\n",
+-    "model = OpenAIChat(id=MODEL)\n",
++    "# メインモデルをOpenAIからGeminiに切り替え(GeminiのOpenAI互換エンドポイント経由)\n",
++    "model = OpenAILike(\n",
++    "    id=MODEL,\n",
++    "    base_url=\"https://generativelanguage.googleapis.com/v1beta/openai/\",\n",
++    "    api_key=os.environ[\"GOOGLE_API_KEY\"],\n",
++    ")\n",
+     "\n",
+     "agent = Agent(\n",
+     "    model=model,\n",
+diff --git a/5_agent_frameworks/3_maf_agno/agno_worker.py b/5_agent_frameworks/3_maf_agno/agno_worker.py
+index 98bee90..f697736 100644
+--- a/5_agent_frameworks/3_maf_agno/agno_worker.py
++++ b/5_agent_frameworks/3_maf_agno/agno_worker.py
+@@ -29,7 +29,7 @@ if TASK_ID is not None:
+ 
+ from dotenv import load_dotenv  # noqa: E402
+ from agno.agent import Agent  # noqa: E402
+-from agno.models.openai import OpenAIChat  # noqa: E402
++from agno.models.openai.like import OpenAILike  # noqa: E402
+ from agno.tools.mcp import MCPTools  # noqa: E402
+ from mcp import StdioServerParameters  # noqa: E402
+ 
+@@ -44,14 +44,19 @@ import board  # noqa: E402
+ 
+ load_dotenv(override=True)
+ 
+-MODEL = os.environ.get("WORKER_MODEL", "gpt-5.4-mini")
++MODEL = os.environ.get("WORKER_MODEL", "gemini-flash-latest")
+ WORKSPACE = Path(__file__).resolve().parent / "workspace"
+ GOAL = "Read notes.txt, translate its contents into natural Spanish, and write the Spanish to spanish.txt."
+ # ファイルツールが書き込める場所: 単体実行時はこのワーカー自身のworkspace、Day5のタスクを
+ # 作業しているときは共有の場所(ボードファイルのフォルダ)。
+ WORK_DIR = WORKSPACE if TASK_ID is None else Path(sys.argv[2]).resolve().parent
+ 
+-model = OpenAIChat(id=MODEL)
++# メインモデルをOpenAIからGeminiに切り替え(GeminiのOpenAI互換エンドポイント経由)
++model = OpenAILike(
++    id=MODEL,
++    base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
++    api_key=os.environ["GOOGLE_API_KEY"],
++)
+ 
+ 
+ def show_todos() -> list[dict]:
+diff --git a/5_agent_frameworks/3_maf_agno/maf_lab.ipynb b/5_agent_frameworks/3_maf_agno/maf_lab.ipynb
+index a5dba8c..9b541d7 100644
+--- a/5_agent_frameworks/3_maf_agno/maf_lab.ipynb
++++ b/5_agent_frameworks/3_maf_agno/maf_lab.ipynb
+@@ -22,7 +22,22 @@
+    "cell_type": "markdown",
+    "id": "3328c81a",
+    "metadata": {},
+-   "source": "## セットアップ\n\n今日必要なものは2つですが、どちらも以前の週からすでに用意されています。\n\n- **Node**。`npx` のために必要です(filesystem MCP サーバーはこれを使って動きます)。`node --version` で確認してください。\n- リポジトリのルートにある `.env` の中の **`OPENAI_API_KEY`**。今日のフレームワークは OpenAI の `gpt-5.4-mini` を使いますが、そのキーは Week 1 以来ずっと `.env` にあるはずです。\n\nMicrosoft Agent Framework はリポジトリの環境に含まれているので、リポジトリのルートで通常の `uv sync` を実行すればすべてインストールされます。このノートブックを Cursor で開き、毎週使っているリポジトリ既定の **Python 3.12.12** カーネルを選んで、上から順にセルを実行してください。\n\n最初の実行を速くするために、今のうちに一度 filesystem MCP サーバーをウォームアップしておき、動作中と表示されたらすぐに Ctrl-C で止めてください。\n\n```bash\nnpx -y @modelcontextprotocol/server-filesystem .\n```"
++   "source": [
++    "## セットアップ\n",
++    "\n",
++    "今日必要なものは2つですが、どちらも以前の週からすでに用意されています。\n",
++    "\n",
++    "- **Node**。`npx` のために必要です(filesystem MCP サーバーはこれを使って動きます)。`node --version` で確認してください。\n",
++    "- リポジトリのルートにある `.env` の中の **`GOOGLE_API_KEY`**。今日のフレームワークは Gemini の `gemini-flash-latest` を、GeminiのOpenAI互換エンドポイント経由で使います。\n",
++    "\n",
++    "Microsoft Agent Framework はリポジトリの環境に含まれているので、リポジトリのルートで通常の `uv sync` を実行すればすべてインストールされます。このノートブックを Cursor で開き、毎週使っているリポジトリ既定の **Python 3.12.12** カーネルを選んで、上から順にセルを実行してください。\n",
++    "\n",
++    "最初の実行を速くするために、今のうちに一度 filesystem MCP サーバーをウォームアップしておき、動作中と表示されたらすぐに Ctrl-C で止めてください。\n",
++    "\n",
++    "```bash\n",
++    "npx -y @modelcontextprotocol/server-filesystem .\n",
++    "```"
++   ]
+   },
+   {
+    "cell_type": "code",
+@@ -47,6 +62,7 @@
+    "outputs": [],
+    "source": [
+     "\n",
++    "import os\n",
+     "import subprocess\n",
+     "from pathlib import Path\n",
+     "\n",
+@@ -61,7 +77,11 @@
+    "cell_type": "markdown",
+    "id": "7eb6d23a",
+    "metadata": {},
+-   "source": "## ステップ1: エージェントを作る\n\nMicrosoft Agent Framework では、エージェントは `Agent` です。モデル用の `client` と、システムプロンプトである `instructions` を持ちます。ここではクライアントを `gpt-5.4-mini` を指す `OpenAIChatClient` として一度だけ組み立て、環境変数から `OPENAI_API_KEY` を読み込み、それをどこでも再利用します。このフレームワークは非同期を前提としているので、エージェントは常に `await` します。"
++   "source": [
++    "## ステップ1: エージェントを作る\n",
++    "\n",
++    "Microsoft Agent Framework では、エージェントは `Agent` です。モデル用の `client` と、システムプロンプトである `instructions` を持ちます。ここではクライアントを、GeminiのOpenAI互換エンドポイントを指す `OpenAIChatClient` として一度だけ組み立て、環境変数から `GOOGLE_API_KEY` を読み込み、それをどこでも再利用します。このフレームワークは非同期を前提としているので、エージェントは常に `await` します。"
++   ]
+   },
+   {
+    "cell_type": "code",
+@@ -77,9 +97,14 @@
+    },
+    "outputs": [],
+    "source": [
+-    "MODEL = \"gpt-5.4-mini\"\n",
++    "MODEL = \"gemini-flash-latest\"\n",
+     "\n",
+-    "client = OpenAIChatClient(model=MODEL)\n",
++    "# メインモデルをOpenAIからGeminiに切り替え(GeminiのOpenAI互換エンドポイント経由)\n",
++    "client = OpenAIChatClient(\n",
++    "    model=MODEL,\n",
++    "    base_url=\"https://generativelanguage.googleapis.com/v1beta/openai/\",\n",
++    "    api_key=os.environ[\"GOOGLE_API_KEY\"],\n",
++    ")\n",
+     "\n",
+     "agent = Agent(\n",
+     "    client=client,\n",
+diff --git a/5_agent_frameworks/3_maf_agno/maf_worker.py b/5_agent_frameworks/3_maf_agno/maf_worker.py
+index 3ab0d9c..fbc8f5e 100644
+--- a/5_agent_frameworks/3_maf_agno/maf_worker.py
++++ b/5_agent_frameworks/3_maf_agno/maf_worker.py
+@@ -36,14 +36,19 @@ import board  # noqa: E402
+ 
+ load_dotenv(override=True)
+ 
+-MODEL = os.environ.get("WORKER_MODEL", "gpt-5.4-mini")
++MODEL = os.environ.get("WORKER_MODEL", "gemini-flash-latest")
+ WORKSPACE = Path(__file__).resolve().parent / "workspace"
+ GOAL = "Read notes.txt, translate its contents into natural Spanish, and write the Spanish to spanish.txt."
+ # ファイルツールが書き込める場所: 単体実行時はこのワーカー自身のworkspace、Day5のタスクを
+ # 作業しているときは共有の場所(ボードファイルのフォルダ)。
+ WORK_DIR = WORKSPACE if TASK_ID is None else Path(sys.argv[2]).resolve().parent
+ 
+-client = OpenAIChatClient(model=MODEL)
++# メインモデルをOpenAIからGeminiに切り替え(GeminiのOpenAI互換エンドポイント経由)
++client = OpenAIChatClient(
++    model=MODEL,
++    base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
++    api_key=os.environ["GOOGLE_API_KEY"],
++)
+ 
+ 
+ def show_todos() -> list[dict]:
+diff --git a/5_agent_frameworks/4_mastra/gemini.ts b/5_agent_frameworks/4_mastra/gemini.ts
+new file mode 100644
+index 0000000..ee3c310
+--- /dev/null
++++ b/5_agent_frameworks/4_mastra/gemini.ts
+@@ -0,0 +1,18 @@
++/**
++ * メインモデルをOpenAIからGeminiに切り替える。
++ *
++ * MastraはVercel AI SDK経由でモデルを解決する。ここでは@ai-sdk/openaiの
++ * createOpenAI()を使い、baseURLをGeminiのOpenAI互換エンドポイントに向けることで、
++ * 新しいnpmパッケージを追加せずにGeminiを呼び出す。
++ *
++ * 使い方: 各ファイルで `model: "openai/gpt-5.4-mini"` の代わりに
++ * `model: gemini("gemini-flash-latest")` を使う。
++ */
++
++import "./env.ts";
++import { createOpenAI } from "@ai-sdk/openai";
++
++export const gemini = createOpenAI({
++  baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
++  apiKey: process.env.GOOGLE_API_KEY,
++});
+diff --git a/5_agent_frameworks/4_mastra/src/mastra/index.ts b/5_agent_frameworks/4_mastra/src/mastra/index.ts
+index bd1b4f0..8cdd49c 100644
+--- a/5_agent_frameworks/4_mastra/src/mastra/index.ts
++++ b/5_agent_frameworks/4_mastra/src/mastra/index.ts
+@@ -18,6 +18,7 @@
+ import "../../env.ts";
+ import { Mastra } from "@mastra/core/mastra";
+ import { Agent } from "@mastra/core/agent";
++import { gemini } from "../../gemini.ts";
+ import { boardTools } from "../../tools.ts";
+ import { resetBoard, addGoal, claimTodo } from "../../board.ts";
+ 
+@@ -32,7 +33,7 @@ export const worker = new Agent({
+   name: "Worker",
+   instructions:
+     "You are a careful worker with a shared todo board. Read the pending goal with show_todos and do what it asks. Always record your finished work by calling complete_task with the goal's id and your result, which marks the goal done. Then reply with your result so the user can read it.",
+-  model: "openai/gpt-5.4-mini",
++  model: gemini("gemini-flash-latest"),
+   tools: boardTools,
+ });
+ 
+diff --git a/5_agent_frameworks/4_mastra/step1.ts b/5_agent_frameworks/4_mastra/step1.ts
+index 2be33d2..b8cbe9d 100644
+--- a/5_agent_frameworks/4_mastra/step1.ts
++++ b/5_agent_frameworks/4_mastra/step1.ts
+@@ -2,19 +2,20 @@
+  * Step1: エージェントを作成する。
+  *
+  * Mastraでは、エージェントはAgentであり、名前、instructions(システムプロンプト)、
+- * モデルを持つ。モデルはルーティング用の文字列 "openai/gpt-5.4-mini" で、Vercel AI SDK
+- * によって解決され、OpenAIを選び、環境変数からOPENAI_API_KEYを読み取る。まだ何も
++ * モデルを持つ。モデルはGeminiのOpenAI互換エンドポイントを指すプロバイダー(./gemini.ts)
++ * から作られ、環境変数からGOOGLE_API_KEYを読み取る。まだ何も
+  * 実行されず、ここでは組み立てるだけである。実行するには: npm run step1
+  */
+ 
+ import "./env.ts";
+ import { Agent } from "@mastra/core/agent";
++import { gemini } from "./gemini.ts";
+ 
+ const agent = new Agent({
+   id: "assistant",
+   name: "Assistant",
+   instructions: "You are a concise, friendly assistant. Reply in a single short sentence.",
+-  model: "openai/gpt-5.4-mini",
++  model: gemini("gemini-flash-latest"),
+ });
+ 
+ console.log(`Created agent: ${agent.name}`);
+diff --git a/5_agent_frameworks/4_mastra/step2.ts b/5_agent_frameworks/4_mastra/step2.ts
+index 497fdf1..9ff1b5e 100644
+--- a/5_agent_frameworks/4_mastra/step2.ts
++++ b/5_agent_frameworks/4_mastra/step2.ts
+@@ -8,12 +8,13 @@
+ 
+ import "./env.ts";
+ import { Agent } from "@mastra/core/agent";
++import { gemini } from "./gemini.ts";
+ 
+ const agent = new Agent({
+   id: "assistant",
+   name: "Assistant",
+   instructions: "You are a concise, friendly assistant. Reply in a single short sentence.",
+-  model: "openai/gpt-5.4-mini",
++  model: gemini("gemini-flash-latest"),
+ });
+ 
+ const reply = await agent.generate("Say hello in Spanish.");
+diff --git a/5_agent_frameworks/4_mastra/step3.ts b/5_agent_frameworks/4_mastra/step3.ts
+index 1890d2a..08f086e 100644
+--- a/5_agent_frameworks/4_mastra/step3.ts
++++ b/5_agent_frameworks/4_mastra/step3.ts
+@@ -15,6 +15,7 @@
+ 
+ import "./env.ts";
+ import { Agent } from "@mastra/core/agent";
++import { gemini } from "./gemini.ts";
+ import { showTodos, completeTask } from "./tools.ts";
+ import { resetBoard, addGoal, showBoard } from "./board.ts";
+ 
+@@ -25,7 +26,7 @@ const boardAgent = new Agent({
+   id: "board-agent",
+   name: "Board Agent",
+   instructions: "You help manage a shared todo board.",
+-  model: "openai/gpt-5.4-mini",
++  model: gemini("gemini-flash-latest"),
+   tools: { showTodos, completeTask },
+ });
+ 
+diff --git a/5_agent_frameworks/4_mastra/step4.ts b/5_agent_frameworks/4_mastra/step4.ts
+index b35b3a3..5dff764 100644
+--- a/5_agent_frameworks/4_mastra/step4.ts
++++ b/5_agent_frameworks/4_mastra/step4.ts
+@@ -12,6 +12,7 @@
+ 
+ import "./env.ts";
+ import { Agent } from "@mastra/core/agent";
++import { gemini } from "./gemini.ts";
+ import { makeFilesystem } from "./tools.ts";
+ 
+ const filesystem = makeFilesystem();
+@@ -20,7 +21,7 @@ const fileAgent = new Agent({
+   id: "file-agent",
+   name: "File Agent",
+   instructions: "You can read and write files in your workspace. Use your tools to do what is asked.",
+-  model: "openai/gpt-5.4-mini",
++  model: gemini("gemini-flash-latest"),
+   tools: await filesystem.listTools(),
+ });
+ 
+diff --git a/5_agent_frameworks/4_mastra/step5.ts b/5_agent_frameworks/4_mastra/step5.ts
+index bd5f261..c99a1ab 100644
+--- a/5_agent_frameworks/4_mastra/step5.ts
++++ b/5_agent_frameworks/4_mastra/step5.ts
+@@ -16,6 +16,7 @@ import "./env.ts";
+ import { join } from "node:path";
+ import { mkdirSync, rmSync, existsSync, readFileSync } from "node:fs";
+ import { Agent } from "@mastra/core/agent";
++import { gemini } from "./gemini.ts";
+ import { boardTools, makeFilesystem, WORKSPACE } from "./tools.ts";
+ import { resetBoard, addGoal, claimTodo, showBoard } from "./board.ts";
+ 
+@@ -41,7 +42,7 @@ const worker = new Agent({
+   id: "worker",
+   name: "Worker",
+   instructions: INSTRUCTIONS,
+-  model: "openai/gpt-5.4-mini",
++  model: gemini("gemini-flash-latest"),
+   tools: { ...boardTools, ...(await filesystem.listTools()) },
+ });
+ 
+diff --git a/6_mcp/1_lab1.ipynb b/6_mcp/1_lab1.ipynb
+index 71a591d..b16d059 100644
+--- a/6_mcp/1_lab1.ipynb
++++ b/6_mcp/1_lab1.ipynb
+@@ -21,6 +21,24 @@
+     "load_dotenv(override=True)"
+    ]
+   },
++  {
++   "cell_type": "code",
++   "execution_count": null,
++   "metadata": {},
++   "outputs": [],
++   "source": [
++    "# メインモデルをOpenAIからGeminiに切り替える\n",
++    "from openai import AsyncOpenAI\n",
++    "from agents import OpenAIChatCompletionsModel, set_tracing_disabled\n",
++    "\n",
++    "GEMINI_BASE_URL = \"https://generativelanguage.googleapis.com/v1beta/openai/\"\n",
++    "gemini_client = AsyncOpenAI(api_key=os.getenv(\"GOOGLE_API_KEY\"), base_url=GEMINI_BASE_URL)\n",
++    "MODEL_NAME = OpenAIChatCompletionsModel(model=\"gemini-flash-latest\", openai_client=gemini_client)\n",
++    "\n",
++    "# GeminiのキーではOpenAIのトレース機能(platform.openai.com/traces)は使えないため無効化\n",
++    "set_tracing_disabled(True)\n"
++   ]
++  },
+   {
+    "cell_type": "markdown",
+    "metadata": {},
+@@ -174,7 +192,7 @@
+     "        agent = Agent(\n",
+     "            name=\"investigator\",\n",
+     "            instructions=INSTRUCTIONS,\n",
+-    "            model=\"gpt-5.4-mini\",\n",
++    "            model=MODEL_NAME,\n",
+     "            mcp_servers=[mcp_server_files, mcp_server_browser]\n",
+     "            )\n",
+     "        with trace(\"investigate\"):\n",
+@@ -214,7 +232,7 @@
+    "metadata": {},
+    "outputs": [],
+    "source": [
+-    "agent = Agent(name=\"Expert\", instructions=\"Answer the question.\", model=\"gpt-4o-mini\")\n",
++    "agent = Agent(name=\"Expert\", instructions=\"Answer the question.\", model=MODEL_NAME)\n",
+     "result = await Runner.run(agent, question)\n",
+     "print(result.final_output)"
+    ]
+@@ -228,7 +246,7 @@
+     "params = {\"url\": \"https://mcp.context7.com/mcp\", \"timeout\": 60}\n",
+     "\n",
+     "async with MCPServerStreamableHttp(name=\"Context7\", params=params) as server:\n",
+-    "    agent = Agent(name=\"Expert\", instructions=\"Use Context7 to answer the question.\", mcp_servers=[server], model=\"gpt-4o-mini\")\n",
++    "    agent = Agent(name=\"Expert\", instructions=\"Use Context7 to answer the question.\", mcp_servers=[server], model=MODEL_NAME)\n",
+     "    result = await Runner.run(agent, question)\n",
+     "\n",
+     "print(result.final_output)"
+diff --git a/6_mcp/2_lab2.ipynb b/6_mcp/2_lab2.ipynb
+index d58a22c..8201843 100644
+--- a/6_mcp/2_lab2.ipynb
++++ b/6_mcp/2_lab2.ipynb
+@@ -19,6 +19,25 @@
+     "load_dotenv(override=True)"
+    ]
+   },
++  {
++   "cell_type": "code",
++   "execution_count": null,
++   "metadata": {},
++   "outputs": [],
++   "source": [
++    "# メインモデルをOpenAIからGeminiに切り替える\n",
++    "import os\n",
++    "from openai import AsyncOpenAI\n",
++    "from agents import OpenAIChatCompletionsModel, set_tracing_disabled\n",
++    "\n",
++    "GEMINI_BASE_URL = \"https://generativelanguage.googleapis.com/v1beta/openai/\"\n",
++    "gemini_client = AsyncOpenAI(api_key=os.getenv(\"GOOGLE_API_KEY\"), base_url=GEMINI_BASE_URL)\n",
++    "MODEL_NAME = OpenAIChatCompletionsModel(model=\"gemini-flash-latest\", openai_client=gemini_client)\n",
++    "\n",
++    "# GeminiのキーではOpenAIのトレース機能(platform.openai.com/traces)は使えないため無効化\n",
++    "set_tracing_disabled(True)\n"
++   ]
++  },
+   {
+    "cell_type": "code",
+    "execution_count": null,
+@@ -107,7 +126,7 @@
+    "source": [
+     "instructions = \"You are able to manage an account for a client, and answer questions about the account.\"\n",
+     "request = \"My name is Ed and my account is under the name Ed. What's my balance and my holdings?\"\n",
+-    "model = \"gpt-5.4-mini\""
++    "model = MODEL_NAME"
+    ]
+   },
+   {
+diff --git a/6_mcp/3_lab3.ipynb b/6_mcp/3_lab3.ipynb
+index ff3d372..b51a99c 100644
+--- a/6_mcp/3_lab3.ipynb
++++ b/6_mcp/3_lab3.ipynb
+@@ -22,6 +22,24 @@
+     "load_dotenv(override=True)"
+    ]
+   },
++  {
++   "cell_type": "code",
++   "execution_count": null,
++   "metadata": {},
++   "outputs": [],
++   "source": [
++    "# メインモデルをOpenAIからGeminiに切り替える\n",
++    "from openai import AsyncOpenAI\n",
++    "from agents import OpenAIChatCompletionsModel, set_tracing_disabled\n",
++    "\n",
++    "GEMINI_BASE_URL = \"https://generativelanguage.googleapis.com/v1beta/openai/\"\n",
++    "gemini_client = AsyncOpenAI(api_key=os.getenv(\"GOOGLE_API_KEY\"), base_url=GEMINI_BASE_URL)\n",
++    "MODEL_NAME = OpenAIChatCompletionsModel(model=\"gemini-flash-latest\", openai_client=gemini_client)\n",
++    "\n",
++    "# GeminiのキーではOpenAIのトレース機能(platform.openai.com/traces)は使えないため無効化\n",
++    "set_tracing_disabled(True)\n"
++   ]
++  },
+   {
+    "cell_type": "markdown",
+    "metadata": {},
+@@ -62,7 +80,7 @@
+    "source": [
+     "instructions = \"You use your entity tools as a persistent memory to store and recall information about your conversations.\"\n",
+     "request = \"My name's Ed. I'm an LLM engineer. I'm teaching a course about AI Agents, including the incredible MCP protocol. MCP is a protocol for connecting agents with tools, resources and prompt templates, and makes it easy to integrate AI agents with capabilities.\"\n",
+-    "model = \"gpt-5.4-mini\""
++    "model = MODEL_NAME"
+    ]
+   },
+   {
+@@ -128,7 +146,7 @@
+    "source": [
+     "instructions = \"You search the web for information and briefly summarize the takeaways.\"\n",
+     "request = f\"Please research the latest news on Amazon stock price and briefly summarize its outlook. For context, the current date is {datetime.now().strftime('%Y-%m-%d')}\"\n",
+-    "model = \"gpt-5.4-mini\"\n",
++    "model = MODEL_NAME\n",
+     "search_only = create_static_tool_filter(allowed_tool_names=[\"tavily_search\"])"
+    ]
+   },
+@@ -182,7 +200,7 @@
+     "When you learn something worth keeping, store it in your knowledge base.\n",
+     "When you are asked what you know, search your knowledge base and answer from it.\"\"\"\n",
+     "\n",
+-    "model = \"gpt-5.4-mini\"\n",
++    "model = MODEL_NAME\n",
+     "\n",
+     "async with MCPServerStdio(params=tavily_params, client_session_timeout_seconds=60, tool_filter=search_only) as search_server:\n",
+     "    async with MCPServerStdio(params=vectorstore_params, client_session_timeout_seconds=120) as vector_server:\n",
+@@ -235,7 +253,7 @@
+    "source": [
+     "instructions = \"You answer questions about the stock market.\"\n",
+     "request = \"What was the most recent price that Apple (AAPL) traded at?\"\n",
+-    "model = \"gpt-5.4-mini\"\n",
++    "model = MODEL_NAME\n",
+     "\n",
+     "async with MCPServerStdio(params=market_params, client_session_timeout_seconds=120) as mcp_server:\n",
+     "    agent = Agent(name=\"agent\", instructions=instructions, model=model, mcp_servers=[mcp_server])\n",
+diff --git a/6_mcp/4_lab4.ipynb b/6_mcp/4_lab4.ipynb
+index dea028b..bd73a5e 100644
+--- a/6_mcp/4_lab4.ipynb
++++ b/6_mcp/4_lab4.ipynb
+@@ -42,6 +42,21 @@
+     "load_dotenv(override=True)"
+    ]
+   },
++  {
++   "cell_type": "code",
++   "execution_count": null,
++   "metadata": {},
++   "outputs": [],
++   "source": [
++    "# メインモデルはGeminiに切り替え済みです。\n",
++    "# backend/traders.py の get_model() が、モデル名に \"gemini\" が含まれる場合に\n",
++    "# 自動でGeminiのOpenAI互換エンドポイント(AsyncOpenAI + OpenAIChatCompletionsModel)を\n",
++    "# 使うようになっているため、このノートブック側で特別な設定は不要です。\n",
++    "# 注意: backend/tracers.py の LogTracer はダッシュボード用のローカルなトレース記録なので、\n",
++    "# tracingそのものは無効化しません(OpenAIのホスト型トレースビューア(platform.openai.com/traces)\n",
++    "# だけがAPIキーの都合で使えなくなります)。"
++   ]
++  },
+   {
+    "cell_type": "markdown",
+    "metadata": {},
+@@ -123,7 +138,7 @@
+    "source": [
+     "async with AsyncExitStack() as stack:\n",
+     "    servers = [await stack.enter_async_context(server) for server in researcher_mcp_servers(\"Warren\")]\n",
+-    "    researcher = await get_researcher(servers, \"gpt-5.4-mini\")\n",
++    "    researcher = await get_researcher(servers, \"gemini-flash-latest\")\n",
+     "    with trace(\"Researcher\"):\n",
+     "        result = await Runner.run(researcher, \"What's the latest news on Amazon?\", max_turns=30)\n",
+     "display(Markdown(result.final_output))"
+@@ -145,7 +160,7 @@
+    "metadata": {},
+    "outputs": [],
+    "source": [
+-    "researcher_tool = await get_researcher_tool(researcher_mcp_servers(\"Warren\"), \"gpt-5.4-mini\")\n",
++    "researcher_tool = await get_researcher_tool(researcher_mcp_servers(\"Warren\"), \"gemini-flash-latest\")\n",
+     "print(\"Tool name:\", researcher_tool.name)\n",
+     "print(\"Description:\", researcher_tool.description)"
+    ]
+@@ -162,7 +177,7 @@
+    "outputs": [],
+    "source": [
+     "add_trace_processor(LogTracer())\n",
+-    "warren = Trader(\"Warren\", \"Patience\", \"gpt-5.4-mini\")\n",
++    "warren = Trader(\"Warren\", \"Patience\", \"gemini-flash-latest\")\n",
+     "await warren.run()"
+    ]
+   },
+diff --git a/6_mcp/backend/__init__.py b/6_mcp/backend/__init__.py
+new file mode 100644
+index 0000000..16c6825
+--- /dev/null
++++ b/6_mcp/backend/__init__.py
+@@ -0,0 +1 @@
++"""Backend package for the Week 6 MCP trading floor: accounts, market data, MCP servers and the trader agents."""
+diff --git a/6_mcp/backend/tracers.py b/6_mcp/backend/tracers.py
+new file mode 100644
+index 0000000..7004f07
+--- /dev/null
++++ b/6_mcp/backend/tracers.py
+@@ -0,0 +1,75 @@
++from agents import TracingProcessor, Trace, Span
++from .database import write_log
++import secrets
++import string
++
++ALPHANUM = string.ascii_lowercase + string.digits 
++
++def make_trace_id(tag: str) -> str:
++    """
++    'trace_<tag><random>' という形式の文字列を返す。
++    'trace_' の後の合計文字数が32文字になるようにする。
++    """
++    tag += "0"
++    pad_len = 32 - len(tag)
++    random_suffix = ''.join(secrets.choice(ALPHANUM) for _ in range(pad_len))
++    return f"trace_{tag}{random_suffix}"
++
++class LogTracer(TracingProcessor):
++
++    def get_name(self, trace_or_span: Trace | Span) -> str | None:
++        trace_id = trace_or_span.trace_id
++        name = trace_id.split("_")[1]
++        if '0' in name:
++            return name.split("0")[0]
++        else:
++            return None
++
++    def on_trace_start(self, trace) -> None:
++        name = self.get_name(trace)
++        if name:
++            write_log(name, "trace", f"Started: {trace.name}")
++
++    def on_trace_end(self, trace) -> None:
++        name = self.get_name(trace)
++        if name:
++            write_log(name, "trace", f"Ended: {trace.name}")
++
++    def on_span_start(self, span) -> None:
++        name = self.get_name(span)
++        type = span.span_data.type if span.span_data else "span"
++        if name:
++            message = "Started"
++            if span.span_data:
++                if span.span_data.type:
++                    message += f" {span.span_data.type}"
++                if hasattr(span.span_data, "name") and span.span_data.name:
++                    message += f" {span.span_data.name}"
++                if hasattr(span.span_data, "server") and span.span_data.server:
++                    message += f" {span.span_data.server}"
++            if span.error:
++                message += f" {span.error}"
++            write_log(name, type, message)
++
++    def on_span_end(self, span) -> None:
++        name = self.get_name(span)
++        type = span.span_data.type if span.span_data else "span"
++        if name:
++            message = "Ended"
++            if span.span_data:
++                if span.span_data.type:
++                    
++                    message += f" {span.span_data.type}"
++                if hasattr(span.span_data, "name") and span.span_data.name:
++                    message += f" {span.span_data.name}"
++                if hasattr(span.span_data, "server") and span.span_data.server:
++                    message += f" {span.span_data.server}"
++            if span.error:
++                message += f" {span.error}"
++            write_log(name, type, message)
++
++    def force_flush(self) -> None:
++        pass
++
++    def shutdown(self) -> None:
++        pass
+\ No newline at end of file
+diff --git a/6_mcp/backend/traders.py b/6_mcp/backend/traders.py
+new file mode 100644
+index 0000000..dbb0032
+--- /dev/null
++++ b/6_mcp/backend/traders.py
+@@ -0,0 +1,124 @@
++from contextlib import AsyncExitStack
++from .accounts_client import read_accounts_resource, read_strategy_resource
++from .tracers import make_trace_id
++from agents import Agent, Tool, Runner, OpenAIChatCompletionsModel, trace
++from openai import AsyncOpenAI
++from dotenv import load_dotenv
++import os
++import json
++from .templates import (
++    researcher_instructions,
++    trader_instructions,
++    trade_message,
++    rebalance_message,
++    research_tool,
++)
++from .mcp_servers import trader_mcp_servers, researcher_mcp_servers
++
++load_dotenv(override=True)
++
++deepseek_api_key = os.getenv("DEEPSEEK_API_KEY")
++google_api_key = os.getenv("GOOGLE_API_KEY")
++grok_api_key = os.getenv("GROK_API_KEY")
++openrouter_api_key = os.getenv("OPENROUTER_API_KEY")
++
++DEEPSEEK_BASE_URL = "https://api.deepseek.com/v1"
++GROK_BASE_URL = "https://api.x.ai/v1"
++GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai/"
++OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
++
++MAX_TURNS = 30
++
++openrouter_client = AsyncOpenAI(base_url=OPENROUTER_BASE_URL, api_key=openrouter_api_key)
++deepseek_client = AsyncOpenAI(base_url=DEEPSEEK_BASE_URL, api_key=deepseek_api_key)
++grok_client = AsyncOpenAI(base_url=GROK_BASE_URL, api_key=grok_api_key)
++gemini_client = AsyncOpenAI(base_url=GEMINI_BASE_URL, api_key=google_api_key)
++
++
++def get_model(model_name: str):
++    if "/" in model_name:
++        return OpenAIChatCompletionsModel(model=model_name, openai_client=openrouter_client)
++    elif "deepseek" in model_name:
++        return OpenAIChatCompletionsModel(model=model_name, openai_client=deepseek_client)
++    elif "grok" in model_name:
++        return OpenAIChatCompletionsModel(model=model_name, openai_client=grok_client)
++    elif "gemini" in model_name:
++        return OpenAIChatCompletionsModel(model=model_name, openai_client=gemini_client)
++    else:
++        return model_name
++
++
++async def get_researcher(mcp_servers, model_name) -> Agent:
++    researcher = Agent(
++        name="Researcher",
++        instructions=researcher_instructions(),
++        model=get_model(model_name),
++        mcp_servers=mcp_servers,
++    )
++    return researcher
++
++
++async def get_researcher_tool(mcp_servers, model_name) -> Tool:
++    researcher = await get_researcher(mcp_servers, model_name)
++    return researcher.as_tool(tool_name="Researcher", tool_description=research_tool())
++
++
++class Trader:
++    def __init__(self, name: str, lastname="Trader", model_name="gemini-flash-latest"):
++        self.name = name
++        self.lastname = lastname
++        self.agent = None
++        self.model_name = model_name
++        self.do_trade = True
++
++    async def create_agent(self, trader_mcp_servers, researcher_mcp_servers) -> Agent:
++        tool = await get_researcher_tool(researcher_mcp_servers, self.model_name)
++        self.agent = Agent(
++            name=self.name,
++            instructions=trader_instructions(self.name),
++            model=get_model(self.model_name),
++            tools=[tool],
++            mcp_servers=trader_mcp_servers,
++        )
++        return self.agent
++
++    async def get_account_report(self) -> str:
++        account = await read_accounts_resource(self.name)
++        account_json = json.loads(account)
++        account_json.pop("portfolio_value_time_series", None)
++        return json.dumps(account_json)
++
++    async def run_agent(self, trader_mcp_servers, researcher_mcp_servers):
++        self.agent = await self.create_agent(trader_mcp_servers, researcher_mcp_servers)
++        account = await self.get_account_report()
++        strategy = await read_strategy_resource(self.name)
++        message = (
++            trade_message(self.name, strategy, account)
++            if self.do_trade
++            else rebalance_message(self.name, strategy, account)
++        )
++        await Runner.run(self.agent, message, max_turns=MAX_TURNS)
++
++    async def run_with_mcp_servers(self):
++        async with AsyncExitStack() as stack:
++            trader_servers = [
++                await stack.enter_async_context(server) for server in trader_mcp_servers()
++            ]
++            researcher_servers = [
++                await stack.enter_async_context(server)
++                for server in researcher_mcp_servers(self.name)
++            ]
++            await self.run_agent(trader_servers, researcher_servers)
++
++    async def run_with_trace(self):
++        trace_name = f"{self.name}-trading" if self.do_trade else f"{self.name}-rebalancing"
++        trace_id = make_trace_id(f"{self.name.lower()}")
++        with trace(trace_name, trace_id=trace_id):
++            await self.run_with_mcp_servers()
++
++    async def run(self):
++        try:
++            await self.run_with_trace()
++        except Exception as e:
++            print(f"Error running trader {self.name}: {e}")
++        self.do_trade = not self.do_trade
+diff --git a/6_mcp/backend/trading_floor.py b/6_mcp/backend/trading_floor.py
+new file mode 100644
+index 0000000..db47416
+--- /dev/null
++++ b/6_mcp/backend/trading_floor.py
+@@ -0,0 +1,54 @@
++from .traders import Trader
++from typing import List
++import asyncio
++from .tracers import LogTracer
++from agents import add_trace_processor
++from .market import is_market_open
++from dotenv import load_dotenv
++import os
++
++load_dotenv(override=True)
++
++RUN_EVERY_N_MINUTES = int(os.getenv("RUN_EVERY_N_MINUTES", "60"))
++RUN_EVEN_WHEN_MARKET_IS_CLOSED = (
++    os.getenv("RUN_EVEN_WHEN_MARKET_IS_CLOSED", "false").strip().lower() == "true"
++)
++USE_MANY_MODELS = os.getenv("USE_MANY_MODELS", "false").strip().lower() == "true"
++
++names = ["Warren", "George", "Ray", "Cathie"]
++lastnames = ["Patience", "Bold", "Systematic", "Crypto"]
++
++if USE_MANY_MODELS:
++    model_names = [
++        "gpt-5.5",
++        "deepseek-v4-flash",
++        "gemini-3.5-flash",
++        "grok-4.3",
++    ]
++    short_model_names = ["GPT 5.5", "DeepSeek V4", "Gemini 3.5 Flash", "Grok 4.3"]
++else:
++    model_names = ["gemini-flash-latest"] * 4
++    short_model_names = ["Gemini Flash Latest"] * 4
++
++
++def create_traders() -> List[Trader]:
++    traders = []
++    for name, lastname, model_name in zip(names, lastnames, model_names):
++        traders.append(Trader(name, lastname, model_name))
++    return traders
++
++
++async def run_every_n_minutes():
++    add_trace_processor(LogTracer())
++    traders = create_traders()
++    while True:
++        if RUN_EVEN_WHEN_MARKET_IS_CLOSED or is_market_open():
++            await asyncio.gather(*[trader.run() for trader in traders])
++        else:
++            print("Market is closed, skipping run")
++        await asyncio.sleep(RUN_EVERY_N_MINUTES * 60)
++
++
++if __name__ == "__main__":
++    print(f"Starting scheduler to run every {RUN_EVERY_N_MINUTES} minutes")
++    asyncio.run(run_every_n_minutes())
+diff --git a/6_mcp/frontend/index.html b/6_mcp/frontend/index.html
+new file mode 100644
+index 0000000..3c5bdf9
+--- /dev/null
++++ b/6_mcp/frontend/index.html
+@@ -0,0 +1,41 @@
++<!doctype html>
++<html lang="en" data-theme="dark">
++  <head>
++    <meta charset="UTF-8" />
++    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
++    <title>Autonomous Traders</title>
++    <link rel="stylesheet" href="/src/styles.css" />
++  </head>
++  <body>
++    <aside class="sidebar">
++      <div class="brand-block">
++        <h1 class="brand">Autonomous Traders</h1>
++        <p class="brand-sub">MCP trading floor</p>
++      </div>
++      <div class="market">
++        <span class="market-label">Market data</span>
++        <div class="market-badge" id="market-badge">
++          <span class="market-dot"></span>
++          <span id="market-source">Connecting</span>
++        </div>
++        <span class="market-status" id="market-status"></span>
++      </div>
++      <div class="returns">
++        <span class="returns-label">Returns</span>
++        <ul class="returns-list" id="returns-list"></ul>
++      </div>
++      <div class="sidebar-spacer"></div>
++      <button class="theme-toggle" id="btn-theme" aria-label="Toggle theme">
++        <svg class="theme-icon icon-moon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
++          <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>
++        </svg>
++        <svg class="theme-icon icon-sun" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
++          <circle cx="12" cy="12" r="4"/>
++          <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>
++        </svg>
++      </button>
++    </aside>
++    <main id="panels" class="panels"></main>
++    <script type="module" src="/src/main.ts"></script>
++  </body>
++</html>
+diff --git a/6_mcp/frontend/package-lock.json b/6_mcp/frontend/package-lock.json
+new file mode 100644
+index 0000000..2b6ea94
+--- /dev/null
++++ b/6_mcp/frontend/package-lock.json
+@@ -0,0 +1,1011 @@
++{
++  "name": "trading-floor-frontend",
++  "version": "0.1.0",
++  "lockfileVersion": 3,
++  "requires": true,
++  "packages": {
++    "": {
++      "name": "trading-floor-frontend",
++      "version": "0.1.0",
++      "dependencies": {
++        "uplot": "^1.6.32"
++      },
++      "devDependencies": {
++        "typescript": "^5.6.0",
++        "vite": "^5.4.0"
++      }
++    },
++    "node_modules/@esbuild/aix-ppc64": {
++      "version": "0.21.5",
++      "resolved": "https://registry.npmjs.org/@esbuild/aix-ppc64/-/aix-ppc64-0.21.5.tgz",
++      "integrity": "sha512-1SDgH6ZSPTlggy1yI6+Dbkiz8xzpHJEVAlF/AM1tHPLsf5STom9rwtjE4hKAF20FfXXNTFqEYXyJNWh1GiZedQ==",
++      "cpu": [
++        "ppc64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "aix"
++      ],
++      "engines": {
++        "node": ">=12"
++      }
++    },
++    "node_modules/@esbuild/android-arm": {
++      "version": "0.21.5",
++      "resolved": "https://registry.npmjs.org/@esbuild/android-arm/-/android-arm-0.21.5.tgz",
++      "integrity": "sha512-vCPvzSjpPHEi1siZdlvAlsPxXl7WbOVUBBAowWug4rJHb68Ox8KualB+1ocNvT5fjv6wpkX6o/iEpbDrf68zcg==",
++      "cpu": [
++        "arm"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "android"
++      ],
++      "engines": {
++        "node": ">=12"
++      }
++    },
++    "node_modules/@esbuild/android-arm64": {
++      "version": "0.21.5",
++      "resolved": "https://registry.npmjs.org/@esbuild/android-arm64/-/android-arm64-0.21.5.tgz",
++      "integrity": "sha512-c0uX9VAUBQ7dTDCjq+wdyGLowMdtR/GoC2U5IYk/7D1H1JYC0qseD7+11iMP2mRLN9RcCMRcjC4YMclCzGwS/A==",
++      "cpu": [
++        "arm64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "android"
++      ],
++      "engines": {
++        "node": ">=12"
++      }
++    },
++    "node_modules/@esbuild/android-x64": {
++      "version": "0.21.5",
++      "resolved": "https://registry.npmjs.org/@esbuild/android-x64/-/android-x64-0.21.5.tgz",
++      "integrity": "sha512-D7aPRUUNHRBwHxzxRvp856rjUHRFW1SdQATKXH2hqA0kAZb1hKmi02OpYRacl0TxIGz/ZmXWlbZgjwWYaCakTA==",
++      "cpu": [
++        "x64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "android"
++      ],
++      "engines": {
++        "node": ">=12"
++      }
++    },
++    "node_modules/@esbuild/darwin-arm64": {
++      "version": "0.21.5",
++      "resolved": "https://registry.npmjs.org/@esbuild/darwin-arm64/-/darwin-arm64-0.21.5.tgz",
++      "integrity": "sha512-DwqXqZyuk5AiWWf3UfLiRDJ5EDd49zg6O9wclZ7kUMv2WRFr4HKjXp/5t8JZ11QbQfUS6/cRCKGwYhtNAY88kQ==",
++      "cpu": [
++        "arm64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "darwin"
++      ],
++      "engines": {
++        "node": ">=12"
++      }
++    },
++    "node_modules/@esbuild/darwin-x64": {
++      "version": "0.21.5",
++      "resolved": "https://registry.npmjs.org/@esbuild/darwin-x64/-/darwin-x64-0.21.5.tgz",
++      "integrity": "sha512-se/JjF8NlmKVG4kNIuyWMV/22ZaerB+qaSi5MdrXtd6R08kvs2qCN4C09miupktDitvh8jRFflwGFBQcxZRjbw==",
++      "cpu": [
++        "x64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "darwin"
++      ],
++      "engines": {
++        "node": ">=12"
++      }
++    },
++    "node_modules/@esbuild/freebsd-arm64": {
++      "version": "0.21.5",
++      "resolved": "https://registry.npmjs.org/@esbuild/freebsd-arm64/-/freebsd-arm64-0.21.5.tgz",
++      "integrity": "sha512-5JcRxxRDUJLX8JXp/wcBCy3pENnCgBR9bN6JsY4OmhfUtIHe3ZW0mawA7+RDAcMLrMIZaf03NlQiX9DGyB8h4g==",
++      "cpu": [
++        "arm64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "freebsd"
++      ],
++      "engines": {
++        "node": ">=12"
++      }
++    },
++    "node_modules/@esbuild/freebsd-x64": {
++      "version": "0.21.5",
++      "resolved": "https://registry.npmjs.org/@esbuild/freebsd-x64/-/freebsd-x64-0.21.5.tgz",
++      "integrity": "sha512-J95kNBj1zkbMXtHVH29bBriQygMXqoVQOQYA+ISs0/2l3T9/kj42ow2mpqerRBxDJnmkUDCaQT/dfNXWX/ZZCQ==",
++      "cpu": [
++        "x64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "freebsd"
++      ],
++      "engines": {
++        "node": ">=12"
++      }
++    },
++    "node_modules/@esbuild/linux-arm": {
++      "version": "0.21.5",
++      "resolved": "https://registry.npmjs.org/@esbuild/linux-arm/-/linux-arm-0.21.5.tgz",
++      "integrity": "sha512-bPb5AHZtbeNGjCKVZ9UGqGwo8EUu4cLq68E95A53KlxAPRmUyYv2D6F0uUI65XisGOL1hBP5mTronbgo+0bFcA==",
++      "cpu": [
++        "arm"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "linux"
++      ],
++      "engines": {
++        "node": ">=12"
++      }
++    },
++    "node_modules/@esbuild/linux-arm64": {
++      "version": "0.21.5",
++      "resolved": "https://registry.npmjs.org/@esbuild/linux-arm64/-/linux-arm64-0.21.5.tgz",
++      "integrity": "sha512-ibKvmyYzKsBeX8d8I7MH/TMfWDXBF3db4qM6sy+7re0YXya+K1cem3on9XgdT2EQGMu4hQyZhan7TeQ8XkGp4Q==",
++      "cpu": [
++        "arm64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "linux"
++      ],
++      "engines": {
++        "node": ">=12"
++      }
++    },
++    "node_modules/@esbuild/linux-ia32": {
++      "version": "0.21.5",
++      "resolved": "https://registry.npmjs.org/@esbuild/linux-ia32/-/linux-ia32-0.21.5.tgz",
++      "integrity": "sha512-YvjXDqLRqPDl2dvRODYmmhz4rPeVKYvppfGYKSNGdyZkA01046pLWyRKKI3ax8fbJoK5QbxblURkwK/MWY18Tg==",
++      "cpu": [
++        "ia32"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "linux"
++      ],
++      "engines": {
++        "node": ">=12"
++      }
++    },
++    "node_modules/@esbuild/linux-loong64": {
++      "version": "0.21.5",
++      "resolved": "https://registry.npmjs.org/@esbuild/linux-loong64/-/linux-loong64-0.21.5.tgz",
++      "integrity": "sha512-uHf1BmMG8qEvzdrzAqg2SIG/02+4/DHB6a9Kbya0XDvwDEKCoC8ZRWI5JJvNdUjtciBGFQ5PuBlpEOXQj+JQSg==",
++      "cpu": [
++        "loong64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "linux"
++      ],
++      "engines": {
++        "node": ">=12"
++      }
++    },
++    "node_modules/@esbuild/linux-mips64el": {
++      "version": "0.21.5",
++      "resolved": "https://registry.npmjs.org/@esbuild/linux-mips64el/-/linux-mips64el-0.21.5.tgz",
++      "integrity": "sha512-IajOmO+KJK23bj52dFSNCMsz1QP1DqM6cwLUv3W1QwyxkyIWecfafnI555fvSGqEKwjMXVLokcV5ygHW5b3Jbg==",
++      "cpu": [
++        "mips64el"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "linux"
++      ],
++      "engines": {
++        "node": ">=12"
++      }
++    },
++    "node_modules/@esbuild/linux-ppc64": {
++      "version": "0.21.5",
++      "resolved": "https://registry.npmjs.org/@esbuild/linux-ppc64/-/linux-ppc64-0.21.5.tgz",
++      "integrity": "sha512-1hHV/Z4OEfMwpLO8rp7CvlhBDnjsC3CttJXIhBi+5Aj5r+MBvy4egg7wCbe//hSsT+RvDAG7s81tAvpL2XAE4w==",
++      "cpu": [
++        "ppc64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "linux"
++      ],
++      "engines": {
++        "node": ">=12"
++      }
++    },
++    "node_modules/@esbuild/linux-riscv64": {
++      "version": "0.21.5",
++      "resolved": "https://registry.npmjs.org/@esbuild/linux-riscv64/-/linux-riscv64-0.21.5.tgz",
++      "integrity": "sha512-2HdXDMd9GMgTGrPWnJzP2ALSokE/0O5HhTUvWIbD3YdjME8JwvSCnNGBnTThKGEB91OZhzrJ4qIIxk/SBmyDDA==",
++      "cpu": [
++        "riscv64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "linux"
++      ],
++      "engines": {
++        "node": ">=12"
++      }
++    },
++    "node_modules/@esbuild/linux-s390x": {
++      "version": "0.21.5",
++      "resolved": "https://registry.npmjs.org/@esbuild/linux-s390x/-/linux-s390x-0.21.5.tgz",
++      "integrity": "sha512-zus5sxzqBJD3eXxwvjN1yQkRepANgxE9lgOW2qLnmr8ikMTphkjgXu1HR01K4FJg8h1kEEDAqDcZQtbrRnB41A==",
++      "cpu": [
++        "s390x"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "linux"
++      ],
++      "engines": {
++        "node": ">=12"
++      }
++    },
++    "node_modules/@esbuild/linux-x64": {
++      "version": "0.21.5",
++      "resolved": "https://registry.npmjs.org/@esbuild/linux-x64/-/linux-x64-0.21.5.tgz",
++      "integrity": "sha512-1rYdTpyv03iycF1+BhzrzQJCdOuAOtaqHTWJZCWvijKD2N5Xu0TtVC8/+1faWqcP9iBCWOmjmhoH94dH82BxPQ==",
++      "cpu": [
++        "x64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "linux"
++      ],
++      "engines": {
++        "node": ">=12"
++      }
++    },
++    "node_modules/@esbuild/netbsd-x64": {
++      "version": "0.21.5",
++      "resolved": "https://registry.npmjs.org/@esbuild/netbsd-x64/-/netbsd-x64-0.21.5.tgz",
++      "integrity": "sha512-Woi2MXzXjMULccIwMnLciyZH4nCIMpWQAs049KEeMvOcNADVxo0UBIQPfSmxB3CWKedngg7sWZdLvLczpe0tLg==",
++      "cpu": [
++        "x64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "netbsd"
++      ],
++      "engines": {
++        "node": ">=12"
++      }
++    },
++    "node_modules/@esbuild/openbsd-x64": {
++      "version": "0.21.5",
++      "resolved": "https://registry.npmjs.org/@esbuild/openbsd-x64/-/openbsd-x64-0.21.5.tgz",
++      "integrity": "sha512-HLNNw99xsvx12lFBUwoT8EVCsSvRNDVxNpjZ7bPn947b8gJPzeHWyNVhFsaerc0n3TsbOINvRP2byTZ5LKezow==",
++      "cpu": [
++        "x64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "openbsd"
++      ],
++      "engines": {
++        "node": ">=12"
++      }
++    },
++    "node_modules/@esbuild/sunos-x64": {
++      "version": "0.21.5",
++      "resolved": "https://registry.npmjs.org/@esbuild/sunos-x64/-/sunos-x64-0.21.5.tgz",
++      "integrity": "sha512-6+gjmFpfy0BHU5Tpptkuh8+uw3mnrvgs+dSPQXQOv3ekbordwnzTVEb4qnIvQcYXq6gzkyTnoZ9dZG+D4garKg==",
++      "cpu": [
++        "x64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "sunos"
++      ],
++      "engines": {
++        "node": ">=12"
++      }
++    },
++    "node_modules/@esbuild/win32-arm64": {
++      "version": "0.21.5",
++      "resolved": "https://registry.npmjs.org/@esbuild/win32-arm64/-/win32-arm64-0.21.5.tgz",
++      "integrity": "sha512-Z0gOTd75VvXqyq7nsl93zwahcTROgqvuAcYDUr+vOv8uHhNSKROyU961kgtCD1e95IqPKSQKH7tBTslnS3tA8A==",
++      "cpu": [
++        "arm64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "win32"
++      ],
++      "engines": {
++        "node": ">=12"
++      }
++    },
++    "node_modules/@esbuild/win32-ia32": {
++      "version": "0.21.5",
++      "resolved": "https://registry.npmjs.org/@esbuild/win32-ia32/-/win32-ia32-0.21.5.tgz",
++      "integrity": "sha512-SWXFF1CL2RVNMaVs+BBClwtfZSvDgtL//G/smwAc5oVK/UPu2Gu9tIaRgFmYFFKrmg3SyAjSrElf0TiJ1v8fYA==",
++      "cpu": [
++        "ia32"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "win32"
++      ],
++      "engines": {
++        "node": ">=12"
++      }
++    },
++    "node_modules/@esbuild/win32-x64": {
++      "version": "0.21.5",
++      "resolved": "https://registry.npmjs.org/@esbuild/win32-x64/-/win32-x64-0.21.5.tgz",
++      "integrity": "sha512-tQd/1efJuzPC6rCFwEvLtci/xNFcTZknmXs98FYDfGE4wP9ClFV98nyKrzJKVPMhdDnjzLhdUyMX4PsQAPjwIw==",
++      "cpu": [
++        "x64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "win32"
++      ],
++      "engines": {
++        "node": ">=12"
++      }
++    },
++    "node_modules/@rollup/rollup-android-arm-eabi": {
++      "version": "4.62.2",
++      "resolved": "https://registry.npmjs.org/@rollup/rollup-android-arm-eabi/-/rollup-android-arm-eabi-4.62.2.tgz",
++      "integrity": "sha512-6o7ZLZK+BeenkZCFNDXqpbjw9bD6nuWonvS/lwQJp7NoVVxm6p3qE7qQ5jGuBjiFsgvqjD8mZAU5oWxTmbOeOg==",
++      "cpu": [
++        "arm"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "android"
++      ]
++    },
++    "node_modules/@rollup/rollup-android-arm64": {
++      "version": "4.62.2",
++      "resolved": "https://registry.npmjs.org/@rollup/rollup-android-arm64/-/rollup-android-arm64-4.62.2.tgz",
++      "integrity": "sha512-BaH7BllCACHoH1LguOU56UItGfUWjujlO65kS9LAodViaN4bwIKd7oeW/ZHJ/4ljr/7MIiENnNy3HJ0zXv8Zkw==",
++      "cpu": [
++        "arm64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "android"
++      ]
++    },
++    "node_modules/@rollup/rollup-darwin-arm64": {
++      "version": "4.62.2",
++      "resolved": "https://registry.npmjs.org/@rollup/rollup-darwin-arm64/-/rollup-darwin-arm64-4.62.2.tgz",
++      "integrity": "sha512-v39RCCvj4He82I9sFmk+M1VZ0PLM9sfsLVikjfx2hYBNALhrrOR2D3JjQA6AhlaSOgcR+RzrKY7e1+bT6SUO/A==",
++      "cpu": [
++        "arm64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "darwin"
++      ]
++    },
++    "node_modules/@rollup/rollup-darwin-x64": {
++      "version": "4.62.2",
++      "resolved": "https://registry.npmjs.org/@rollup/rollup-darwin-x64/-/rollup-darwin-x64-4.62.2.tgz",
++      "integrity": "sha512-yl0y2vq3S3lHeuXhEdss6TWfKW8vkujImO12tn4ZkG/4oghr09LvdYm2RElVjokTQiUvDUGXLGsYeLqUMCKpGA==",
++      "cpu": [
++        "x64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "darwin"
++      ]
++    },
++    "node_modules/@rollup/rollup-freebsd-arm64": {
++      "version": "4.62.2",
++      "resolved": "https://registry.npmjs.org/@rollup/rollup-freebsd-arm64/-/rollup-freebsd-arm64-4.62.2.tgz",
++      "integrity": "sha512-tT4pvt4qXD+vEoezupCWi+a1F0vvDiksiHc+PxRlYTOH1I6/X4id9jPxTP+Fg+545euaFT1jJVs4CEdHZAU1vw==",
++      "cpu": [
++        "arm64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "freebsd"
++      ]
++    },
++    "node_modules/@rollup/rollup-freebsd-x64": {
++      "version": "4.62.2",
++      "resolved": "https://registry.npmjs.org/@rollup/rollup-freebsd-x64/-/rollup-freebsd-x64-4.62.2.tgz",
++      "integrity": "sha512-6nU5F2wCW+qvCBhTn1pdIU3bzsIoF7EUwsCDRxilWGprQR6yd508YnH9+OKFCwpfS8pjZqDUmnCAr7exax0XCg==",
++      "cpu": [
++        "x64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "freebsd"
++      ]
++    },
++    "node_modules/@rollup/rollup-linux-arm-gnueabihf": {
++      "version": "4.62.2",
++      "resolved": "https://registry.npmjs.org/@rollup/rollup-linux-arm-gnueabihf/-/rollup-linux-arm-gnueabihf-4.62.2.tgz",
++      "integrity": "sha512-n1GJHPOvpIfhi3TmrCeh6S6URt9BFCt0KQE3qvexyGCTAKpR4Lg+eWvNZEqu7epxwus/8ElT3hacYEucm49SZg==",
++      "cpu": [
++        "arm"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "linux"
++      ]
++    },
++    "node_modules/@rollup/rollup-linux-arm-musleabihf": {
++      "version": "4.62.2",
++      "resolved": "https://registry.npmjs.org/@rollup/rollup-linux-arm-musleabihf/-/rollup-linux-arm-musleabihf-4.62.2.tgz",
++      "integrity": "sha512-JqgflS8wEB+UXV/vS1RpRbifGBeN4D5lz8D8oOFbFZw4vedvdOgCFAjfBmIMdW3yL10XpQQ0Ambepw6MXrhOnA==",
++      "cpu": [
++        "arm"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "linux"
++      ]
++    },
++    "node_modules/@rollup/rollup-linux-arm64-gnu": {
++      "version": "4.62.2",
++      "resolved": "https://registry.npmjs.org/@rollup/rollup-linux-arm64-gnu/-/rollup-linux-arm64-gnu-4.62.2.tgz",
++      "integrity": "sha512-wnFJkogWvN4jm/hQRF2UBaeUmk20j5+DmHvoyWii2b8HJDyvz1MF2OU/6ynXt2KR63rbZLWkFpoytpdc/yBuSA==",
++      "cpu": [
++        "arm64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "linux"
++      ]
++    },
++    "node_modules/@rollup/rollup-linux-arm64-musl": {
++      "version": "4.62.2",
++      "resolved": "https://registry.npmjs.org/@rollup/rollup-linux-arm64-musl/-/rollup-linux-arm64-musl-4.62.2.tgz",
++      "integrity": "sha512-HVu2bp0zhvJ8xHEV9+UUs7S90VadmBSY3LcIMvozbPo4AuMGDWlz3ymHLHZPX4hR67TKTt8Qp5PJ5RBg/i+RMQ==",
++      "cpu": [
++        "arm64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "linux"
++      ]
++    },
++    "node_modules/@rollup/rollup-linux-loong64-gnu": {
++      "version": "4.62.2",
++      "resolved": "https://registry.npmjs.org/@rollup/rollup-linux-loong64-gnu/-/rollup-linux-loong64-gnu-4.62.2.tgz",
++      "integrity": "sha512-mQqqAV8QaoSgr9I2fKDLY2BAVvmKjWoGiu/cSYQonsLvtqwEn1E4QYfnCOcp5zoEqNhsDYin1s6jx/VJmrxlZg==",
++      "cpu": [
++        "loong64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "linux"
++      ]
++    },
++    "node_modules/@rollup/rollup-linux-loong64-musl": {
++      "version": "4.62.2",
++      "resolved": "https://registry.npmjs.org/@rollup/rollup-linux-loong64-musl/-/rollup-linux-loong64-musl-4.62.2.tgz",
++      "integrity": "sha512-IxKLoxCQ2IWi6bT2akyDUBGsOImDKB+sPp4EsTmwFQ/fMwpCKm8uLSSgP/Kx/QYUgKis6SEZ5/Nlhup0DIA0PQ==",
++      "cpu": [
++        "loong64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "linux"
++      ]
++    },
++    "node_modules/@rollup/rollup-linux-ppc64-gnu": {
++      "version": "4.62.2",
++      "resolved": "https://registry.npmjs.org/@rollup/rollup-linux-ppc64-gnu/-/rollup-linux-ppc64-gnu-4.62.2.tgz",
++      "integrity": "sha512-Mk5ha2RQSgyFfmYYLkBpPnUk8D8FriBxesO1u9O75X0mHgXL1UQcH5Itl2lurWL2tj0RxV9b9tJgipac0hRY9A==",
++      "cpu": [
++        "ppc64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "linux"
++      ]
++    },
++    "node_modules/@rollup/rollup-linux-ppc64-musl": {
++      "version": "4.62.2",
++      "resolved": "https://registry.npmjs.org/@rollup/rollup-linux-ppc64-musl/-/rollup-linux-ppc64-musl-4.62.2.tgz",
++      "integrity": "sha512-CjvEnqJL/0/TQ3TXX3OPIJ/kmBellrWd4heXUmHeJlTnmwjKpSJzoehLaL6Xk0ZnMHBu9dZuFADNOrtjF4v+2w==",
++      "cpu": [
++        "ppc64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "linux"
++      ]
++    },
++    "node_modules/@rollup/rollup-linux-riscv64-gnu": {
++      "version": "4.62.2",
++      "resolved": "https://registry.npmjs.org/@rollup/rollup-linux-riscv64-gnu/-/rollup-linux-riscv64-gnu-4.62.2.tgz",
++      "integrity": "sha512-1SiZbzwdkaDURsew/tSOrooKiYy7EQGT6m8ufavAi9NEyQb/6VuIxFXAL1fqa4iZe3g4NbNk4P7J32z2tw5Mgg==",
++      "cpu": [
++        "riscv64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "linux"
++      ]
++    },
++    "node_modules/@rollup/rollup-linux-riscv64-musl": {
++      "version": "4.62.2",
++      "resolved": "https://registry.npmjs.org/@rollup/rollup-linux-riscv64-musl/-/rollup-linux-riscv64-musl-4.62.2.tgz",
++      "integrity": "sha512-nQts12zJ3NQRoE6uYljOH89v7szzLDvG2JD/vsX+vGXU8w/At1GowTZ5/7qeFQ8m7L55rpR8Okugnuo5bgjy2Q==",
++      "cpu": [
++        "riscv64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "linux"
++      ]
++    },
++    "node_modules/@rollup/rollup-linux-s390x-gnu": {
++      "version": "4.62.2",
++      "resolved": "https://registry.npmjs.org/@rollup/rollup-linux-s390x-gnu/-/rollup-linux-s390x-gnu-4.62.2.tgz",
++      "integrity": "sha512-E9/ll019jhPIJgpzfZoIkBGhcz+kKNgVWYRY0zr9srBdPPFVpvOKW8VaJKUbeK+eZXyQF9ltME+Kk6affeaPgg==",
++      "cpu": [
++        "s390x"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "linux"
++      ]
++    },
++    "node_modules/@rollup/rollup-linux-x64-gnu": {
++      "version": "4.62.2",
++      "resolved": "https://registry.npmjs.org/@rollup/rollup-linux-x64-gnu/-/rollup-linux-x64-gnu-4.62.2.tgz",
++      "integrity": "sha512-5BqxR/pshjey51iliyzTD5Xi3EN0aLmQ2lZ3lvefVV9c82BvrLo2/6OT55iifpWBufs6kdwWbuOKS841DrmK9A==",
++      "cpu": [
++        "x64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "linux"
++      ]
++    },
++    "node_modules/@rollup/rollup-linux-x64-musl": {
++      "version": "4.62.2",
++      "resolved": "https://registry.npmjs.org/@rollup/rollup-linux-x64-musl/-/rollup-linux-x64-musl-4.62.2.tgz",
++      "integrity": "sha512-uNN83XxQrRAh/w0/pmAfibcwyb6YWt4gP+dpnQKPVJshAloQ785ii8CT8ZCIxkGg9opVsvAlGhFitSm6D1Jjpg==",
++      "cpu": [
++        "x64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "linux"
++      ]
++    },
++    "node_modules/@rollup/rollup-openbsd-x64": {
++      "version": "4.62.2",
++      "resolved": "https://registry.npmjs.org/@rollup/rollup-openbsd-x64/-/rollup-openbsd-x64-4.62.2.tgz",
++      "integrity": "sha512-srjEIxSH3LRnJN6THczDHWQplqEMFiAJrTab0msUryh9kwNpkICf3Ea6q6MN/2cZwRFUNx5w+h6Hpi4QuHS6Zg==",
++      "cpu": [
++        "x64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "openbsd"
++      ]
++    },
++    "node_modules/@rollup/rollup-openharmony-arm64": {
++      "version": "4.62.2",
++      "resolved": "https://registry.npmjs.org/@rollup/rollup-openharmony-arm64/-/rollup-openharmony-arm64-4.62.2.tgz",
++      "integrity": "sha512-8hOJnxgbyObnCm5AlRA3A931xX19xq80RjVTKgJOvEKWqJruP/Uf12IbAOaDjjEXYRewwHLfmF0YRIdK3OwKWA==",
++      "cpu": [
++        "arm64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "openharmony"
++      ]
++    },
++    "node_modules/@rollup/rollup-win32-arm64-msvc": {
++      "version": "4.62.2",
++      "resolved": "https://registry.npmjs.org/@rollup/rollup-win32-arm64-msvc/-/rollup-win32-arm64-msvc-4.62.2.tgz",
++      "integrity": "sha512-mmF4AY1i0hG/bLWUctUq59gtmgaSIRa3cu/A3JFRp/sCNEme2bgDEiDS22P9FbnJB8NJNF4jPJiSP5RHQpUTDg==",
++      "cpu": [
++        "arm64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "win32"
++      ]
++    },
++    "node_modules/@rollup/rollup-win32-ia32-msvc": {
++      "version": "4.62.2",
++      "resolved": "https://registry.npmjs.org/@rollup/rollup-win32-ia32-msvc/-/rollup-win32-ia32-msvc-4.62.2.tgz",
++      "integrity": "sha512-DZgkknc6jhHrk46V25vbAM0zZkyP0nSDkJB8/dRkLTxv470dOmWDqGoEJl/9A0dFfS7yE3REOwNDxpHwSLSt0Q==",
++      "cpu": [
++        "ia32"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "win32"
++      ]
++    },
++    "node_modules/@rollup/rollup-win32-x64-gnu": {
++      "version": "4.62.2",
++      "resolved": "https://registry.npmjs.org/@rollup/rollup-win32-x64-gnu/-/rollup-win32-x64-gnu-4.62.2.tgz",
++      "integrity": "sha512-T6xr6ucWSFto+VGajA8YH26LdpHRuP4YLHEKAtCWvJDOlnmWcDZVCI2Jmjr+IFHDlt2zRaTAKE4tfjTaWLgJBg==",
++      "cpu": [
++        "x64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "win32"
++      ]
++    },
++    "node_modules/@rollup/rollup-win32-x64-msvc": {
++      "version": "4.62.2",
++      "resolved": "https://registry.npmjs.org/@rollup/rollup-win32-x64-msvc/-/rollup-win32-x64-msvc-4.62.2.tgz",
++      "integrity": "sha512-BfzEnDJOt9T8M989/lA37EcJgat01wLRnoi5dQf3QzOH7jzpqTAzdDbVfRljVr5r+jzKqpbHeyOfAaXxAd0PAA==",
++      "cpu": [
++        "x64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "win32"
++      ]
++    },
++    "node_modules/@types/estree": {
++      "version": "1.0.9",
++      "resolved": "https://registry.npmjs.org/@types/estree/-/estree-1.0.9.tgz",
++      "integrity": "sha512-GhdPgy1el4/ImP05X05Uw4cw2/M93BCUmnEvWZNStlCzEKME4Fkk+YpoA5OiHNQmoS7Cafb8Xa3Pya8m1Qrzeg==",
++      "dev": true,
++      "license": "MIT"
++    },
++    "node_modules/esbuild": {
++      "version": "0.21.5",
++      "resolved": "https://registry.npmjs.org/esbuild/-/esbuild-0.21.5.tgz",
++      "integrity": "sha512-mg3OPMV4hXywwpoDxu3Qda5xCKQi+vCTZq8S9J/EpkhB2HzKXq4SNFZE3+NK93JYxc8VMSep+lOUSC/RVKaBqw==",
++      "dev": true,
++      "hasInstallScript": true,
++      "license": "MIT",
++      "bin": {
++        "esbuild": "bin/esbuild"
++      },
++      "engines": {
++        "node": ">=12"
++      },
++      "optionalDependencies": {
++        "@esbuild/aix-ppc64": "0.21.5",
++        "@esbuild/android-arm": "0.21.5",
++        "@esbuild/android-arm64": "0.21.5",
++        "@esbuild/android-x64": "0.21.5",
++        "@esbuild/darwin-arm64": "0.21.5",
++        "@esbuild/darwin-x64": "0.21.5",
++        "@esbuild/freebsd-arm64": "0.21.5",
++        "@esbuild/freebsd-x64": "0.21.5",
++        "@esbuild/linux-arm": "0.21.5",
++        "@esbuild/linux-arm64": "0.21.5",
++        "@esbuild/linux-ia32": "0.21.5",
++        "@esbuild/linux-loong64": "0.21.5",
++        "@esbuild/linux-mips64el": "0.21.5",
++        "@esbuild/linux-ppc64": "0.21.5",
++        "@esbuild/linux-riscv64": "0.21.5",
++        "@esbuild/linux-s390x": "0.21.5",
++        "@esbuild/linux-x64": "0.21.5",
++        "@esbuild/netbsd-x64": "0.21.5",
++        "@esbuild/openbsd-x64": "0.21.5",
++        "@esbuild/sunos-x64": "0.21.5",
++        "@esbuild/win32-arm64": "0.21.5",
++        "@esbuild/win32-ia32": "0.21.5",
++        "@esbuild/win32-x64": "0.21.5"
++      }
++    },
++    "node_modules/fsevents": {
++      "version": "2.3.3",
++      "resolved": "https://registry.npmjs.org/fsevents/-/fsevents-2.3.3.tgz",
++      "integrity": "sha512-5xoDfX+fL7faATnagmWPpbFtwh/R77WmMMqqHGS65C3vvB0YHrgF+B1YmZ3441tMj5n63k0212XNoJwzlhffQw==",
++      "dev": true,
++      "hasInstallScript": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "darwin"
++      ],
++      "engines": {
++        "node": "^8.16.0 || ^10.6.0 || >=11.0.0"
++      }
++    },
++    "node_modules/nanoid": {
++      "version": "3.3.14",
++      "resolved": "https://registry.npmjs.org/nanoid/-/nanoid-3.3.14.tgz",
++      "integrity": "sha512-U9kYi5bpVMEI31yC8iw4bJJp0avcHXA0W8/wNfLfnvJYzihQo2ZRPYPvpAAd570HAcCBjCTN7vnr+v4StKl1IQ==",
++      "dev": true,
++      "funding": [
++        {
++          "type": "github",
++          "url": "https://github.com/sponsors/ai"
++        }
++      ],
++      "license": "MIT",
++      "bin": {
++        "nanoid": "bin/nanoid.cjs"
++      },
++      "engines": {
++        "node": "^10 || ^12 || ^13.7 || ^14 || >=15.0.1"
++      }
++    },
++    "node_modules/picocolors": {
++      "version": "1.1.1",
++      "resolved": "https://registry.npmjs.org/picocolors/-/picocolors-1.1.1.tgz",
++      "integrity": "sha512-xceH2snhtb5M9liqDsmEw56le376mTZkEX/jEb/RxNFyegNul7eNslCXP9FDj/Lcu0X8KEyMceP2ntpaHrDEVA==",
++      "dev": true,
++      "license": "ISC"
++    },
++    "node_modules/postcss": {
++      "version": "8.5.15",
++      "resolved": "https://registry.npmjs.org/postcss/-/postcss-8.5.15.tgz",
++      "integrity": "sha512-FfR8sjd4em2T6fb3I2MwAJU7HWVMr9zba+enmQeeWFfCbm+UOC/0X4DS8XtpUTMwWMGbjKYP7xjfNekzyGmB3A==",
++      "dev": true,
++      "funding": [
++        {
++          "type": "opencollective",
++          "url": "https://opencollective.com/postcss/"
++        },
++        {
++          "type": "tidelift",
++          "url": "https://tidelift.com/funding/github/npm/postcss"
++        },
++        {
++          "type": "github",
++          "url": "https://github.com/sponsors/ai"
++        }
++      ],
++      "license": "MIT",
++      "dependencies": {
++        "nanoid": "^3.3.12",
++        "picocolors": "^1.1.1",
++        "source-map-js": "^1.2.1"
++      },
++      "engines": {
++        "node": "^10 || ^12 || >=14"
++      }
++    },
++    "node_modules/rollup": {
++      "version": "4.62.2",
++      "resolved": "https://registry.npmjs.org/rollup/-/rollup-4.62.2.tgz",
++      "integrity": "sha512-RFnrW4lhXA3s3eqHDZvN654g8OTjzRfqpIRJYczCGB6HzphckVAi/Qh4tbPUbRuDi7s1Llv8g/NspLkttY3gTA==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "@types/estree": "1.0.9"
++      },
++      "bin": {
++        "rollup": "dist/bin/rollup"
++      },
++      "engines": {
++        "node": ">=18.0.0",
++        "npm": ">=8.0.0"
++      },
++      "optionalDependencies": {
++        "@rollup/rollup-android-arm-eabi": "4.62.2",
++        "@rollup/rollup-android-arm64": "4.62.2",
++        "@rollup/rollup-darwin-arm64": "4.62.2",
++        "@rollup/rollup-darwin-x64": "4.62.2",
++        "@rollup/rollup-freebsd-arm64": "4.62.2",
++        "@rollup/rollup-freebsd-x64": "4.62.2",
++        "@rollup/rollup-linux-arm-gnueabihf": "4.62.2",
++        "@rollup/rollup-linux-arm-musleabihf": "4.62.2",
++        "@rollup/rollup-linux-arm64-gnu": "4.62.2",
++        "@rollup/rollup-linux-arm64-musl": "4.62.2",
++        "@rollup/rollup-linux-loong64-gnu": "4.62.2",
++        "@rollup/rollup-linux-loong64-musl": "4.62.2",
++        "@rollup/rollup-linux-ppc64-gnu": "4.62.2",
++        "@rollup/rollup-linux-ppc64-musl": "4.62.2",
++        "@rollup/rollup-linux-riscv64-gnu": "4.62.2",
++        "@rollup/rollup-linux-riscv64-musl": "4.62.2",
++        "@rollup/rollup-linux-s390x-gnu": "4.62.2",
++        "@rollup/rollup-linux-x64-gnu": "4.62.2",
++        "@rollup/rollup-linux-x64-musl": "4.62.2",
++        "@rollup/rollup-openbsd-x64": "4.62.2",
++        "@rollup/rollup-openharmony-arm64": "4.62.2",
++        "@rollup/rollup-win32-arm64-msvc": "4.62.2",
++        "@rollup/rollup-win32-ia32-msvc": "4.62.2",
++        "@rollup/rollup-win32-x64-gnu": "4.62.2",
++        "@rollup/rollup-win32-x64-msvc": "4.62.2",
++        "fsevents": "~2.3.2"
++      }
++    },
++    "node_modules/source-map-js": {
++      "version": "1.2.1",
++      "resolved": "https://registry.npmjs.org/source-map-js/-/source-map-js-1.2.1.tgz",
++      "integrity": "sha512-UXWMKhLOwVKb728IUtQPXxfYU+usdybtUrK/8uGE8CQMvrhOpwvzDBwj0QhSL7MQc7vIsISBG8VQ8+IDQxpfQA==",
++      "dev": true,
++      "license": "BSD-3-Clause",
++      "engines": {
++        "node": ">=0.10.0"
++      }
++    },
++    "node_modules/typescript": {
++      "version": "5.9.3",
++      "resolved": "https://registry.npmjs.org/typescript/-/typescript-5.9.3.tgz",
++      "integrity": "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==",
++      "dev": true,
++      "license": "Apache-2.0",
++      "bin": {
++        "tsc": "bin/tsc",
++        "tsserver": "bin/tsserver"
++      },
++      "engines": {
++        "node": ">=14.17"
++      }
++    },
++    "node_modules/uplot": {
++      "version": "1.6.32",
++      "resolved": "https://registry.npmjs.org/uplot/-/uplot-1.6.32.tgz",
++      "integrity": "sha512-KIMVnG68zvu5XXUbC4LQEPnhwOxBuLyW1AHtpm6IKTXImkbLgkMy+jabjLgSLMasNuGGzQm/ep3tOkyTxpiQIw==",
++      "license": "MIT"
++    },
++    "node_modules/vite": {
++      "version": "5.4.21",
++      "resolved": "https://registry.npmjs.org/vite/-/vite-5.4.21.tgz",
++      "integrity": "sha512-o5a9xKjbtuhY6Bi5S3+HvbRERmouabWbyUcpXXUA1u+GNUKoROi9byOJ8M0nHbHYHkYICiMlqxkg1KkYmm25Sw==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "esbuild": "^0.21.3",
++        "postcss": "^8.4.43",
++        "rollup": "^4.20.0"
++      },
++      "bin": {
++        "vite": "bin/vite.js"
++      },
++      "engines": {
++        "node": "^18.0.0 || >=20.0.0"
++      },
++      "funding": {
++        "url": "https://github.com/vitejs/vite?sponsor=1"
++      },
++      "optionalDependencies": {
++        "fsevents": "~2.3.3"
++      },
++      "peerDependencies": {
++        "@types/node": "^18.0.0 || >=20.0.0",
++        "less": "*",
++        "lightningcss": "^1.21.0",
++        "sass": "*",
++        "sass-embedded": "*",
++        "stylus": "*",
++        "sugarss": "*",
++        "terser": "^5.4.0"
++      },
++      "peerDependenciesMeta": {
++        "@types/node": {
++          "optional": true
++        },
++        "less": {
++          "optional": true
++        },
++        "lightningcss": {
++          "optional": true
++        },
++        "sass": {
++          "optional": true
++        },
++        "sass-embedded": {
++          "optional": true
++        },
++        "stylus": {
++          "optional": true
++        },
++        "sugarss": {
++          "optional": true
++        },
++        "terser": {
++          "optional": true
++        }
++      }
++    }
++  }
++}
+diff --git a/6_mcp/frontend/package.json b/6_mcp/frontend/package.json
+new file mode 100644
+index 0000000..4b3b866
+--- /dev/null
++++ b/6_mcp/frontend/package.json
+@@ -0,0 +1,18 @@
++{
++  "name": "trading-floor-frontend",
++  "private": true,
++  "version": "0.1.0",
++  "type": "module",
++  "scripts": {
++    "dev": "vite",
++    "build": "tsc && vite build",
++    "preview": "vite preview"
++  },
++  "dependencies": {
++    "uplot": "^1.6.32"
++  },
++  "devDependencies": {
++    "typescript": "^5.6.0",
++    "vite": "^5.4.0"
++  }
++}
+diff --git a/6_mcp/frontend/src/api.ts b/6_mcp/frontend/src/api.ts
+new file mode 100644
+index 0000000..c2bd2ca
+--- /dev/null
++++ b/6_mcp/frontend/src/api.ts
+@@ -0,0 +1,75 @@
++// Client for the trading floor HTTP API. All paths are relative; in dev the Vite
++// proxy forwards /api to the FastAPI backend, so the browser sees one origin.
++
++export interface TraderInfo {
++  name: string;
++  lastname: string;
++  model_name: string;
++}
++
++export interface Holding {
++  symbol: string;
++  quantity: number;
++  price: number;
++  avg_cost: number;
++  market_value: number;
++  unrealized_pnl: number;
++}
++
++export interface Transaction {
++  symbol: string;
++  quantity: number;
++  price: number;
++  timestamp: string;
++  rationale: string;
++}
++
++export interface TimePoint {
++  datetime: string;
++  value: number;
++}
++
++// Mirrors the full backend payload; the dashboard renders a subset of these fields.
++export interface TraderDetail extends TraderInfo {
++  balance: number;
++  strategy: string;
++  portfolio_value: number;
++  pnl: number;
++  holdings: Holding[];
++  transactions: Transaction[];
++  time_series: TimePoint[];
++}
++
++export interface LogRow {
++  datetime: string;
++  type: string;
++  message: string;
++  color: string;
++}
++
++export interface MarketInfo {
++  source: "massive" | "simulator";
++  is_market_open: boolean;
++}
++
++async function get<T>(path: string): Promise<T> {
++  const r = await fetch(path);
++  if (!r.ok) throw new Error(`${path} failed: ${r.status}`);
++  return r.json() as Promise<T>;
++}
++
++export function getTraders(): Promise<TraderInfo[]> {
++  return get("/api/traders");
++}
++
++export function getTrader(name: string): Promise<TraderDetail> {
++  return get(`/api/traders/${encodeURIComponent(name)}`);
++}
++
++export function getTraderLogs(name: string, lastN = 13): Promise<LogRow[]> {
++  return get(`/api/traders/${encodeURIComponent(name)}/logs?last_n=${lastN}`);
++}
++
++export function getMarket(): Promise<MarketInfo> {
++  return get("/api/market");
++}
+diff --git a/6_mcp/frontend/src/chart.ts b/6_mcp/frontend/src/chart.ts
+new file mode 100644
+index 0000000..22d2b21
+--- /dev/null
++++ b/6_mcp/frontend/src/chart.ts
+@@ -0,0 +1,121 @@
++// Per-trader portfolio-value line chart. A thin uPlot wrapper that starts at a
++// 1x1 canvas and syncs to its container once the DOM has laid out. The line and
++// its soft fill are coloured green or red by whether the trader is up overall.
++
++import uPlot, { type Options } from "uplot";
++import "uplot/dist/uPlot.min.css";
++
++import type { ChartPoint } from "./state";
++
++const MIN_HEIGHT = 120;
++const Y_AXIS_WIDTH = 72;
++
++export class PortfolioChart {
++  private plot: uPlot;
++  private host: HTMLElement;
++
++  constructor(host: HTMLElement) {
++    this.host = host;
++
++    const opts: Options = {
++      width: 1,
++      height: 1,
++      pxAlign: false,
++      cursor: { show: false },
++      legend: { show: false },
++      scales: {
++        // A single point would otherwise auto-range to a span of years; show a
++        // five-minute window until enough points arrive to tighten it.
++        x: {
++          time: true,
++          range: (_u, min, max) => (min === max ? [min - 300, max + 30] : [min, max]),
++        },
++        y: {
++          range: (_u, min, max) =>
++            min === max
++              ? [min - 100, max + 100]
++              : [min - (max - min) * 0.1, max + (max - min) * 0.1],
++        },
++      },
++      axes: [
++        {
++          stroke: () => getVar("--fg-muted") || "#8a93a1",
++          grid: { stroke: () => getVar("--grid") || "#232831" },
++        },
++        {
++          stroke: () => getVar("--fg-muted") || "#8a93a1",
++          grid: { stroke: () => getVar("--grid") || "#232831" },
++          size: Y_AXIS_WIDTH,
++          values: (_u, splits) => splits.map(formatCompact),
++        },
++      ],
++      series: [
++        {},
++        {
++          stroke: (u) => trendColor(u),
++          fill: (u) => fillGradient(u),
++          width: 2,
++        },
++      ],
++    };
++    this.plot = new uPlot(opts, [[], []], host);
++
++    // Double-RAF lets the panel grid finish layout before we read dimensions.
++    requestAnimationFrame(() => requestAnimationFrame(() => this.syncSize()));
++    new ResizeObserver(() => this.syncSize()).observe(this.host);
++    // Re-read the theme colours when the user toggles light/dark.
++    window.addEventListener("themechange", () => this.plot.redraw());
++  }
++
++  update(points: ChartPoint[]): void {
++    const xs = points.map((p) => p.t);
++    const ys = points.map((p) => p.value);
++    this.plot.setData([xs, ys]);
++  }
++
++  private syncSize(): void {
++    const rect = this.host.getBoundingClientRect();
++    if (rect.width <= 0 || rect.height <= 0) return;
++    this.plot.setSize({
++      width: Math.floor(rect.width),
++      height: Math.max(MIN_HEIGHT, Math.floor(rect.height)),
++    });
++  }
++}
++
++function isUp(u: uPlot): boolean {
++  const ys = u.data[1] as number[];
++  return ys.length > 1 ? ys[ys.length - 1] >= ys[0] : true;
++}
++
++function trendColor(u: uPlot): string {
++  const up = isUp(u);
++  return getVar(up ? "--trend-up" : "--trend-down") || (up ? "#3fbf7f" : "#e05560");
++}
++
++function fillGradient(u: uPlot): CanvasGradient {
++  const color = trendColor(u);
++  const { ctx, bbox } = u;
++  const grad = ctx.createLinearGradient(0, bbox.top, 0, bbox.top + bbox.height);
++  grad.addColorStop(0, hexToRgba(color, 0.28));
++  grad.addColorStop(1, hexToRgba(color, 0));
++  return grad;
++}
++
++function getVar(name: string): string {
++  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
++}
++
++function hexToRgba(hex: string, alpha: number): string {
++  const h = hex.replace("#", "");
++  const r = parseInt(h.slice(0, 2), 16);
++  const g = parseInt(h.slice(2, 4), 16);
++  const b = parseInt(h.slice(4, 6), 16);
++  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
++}
++
++function formatCompact(n: number): string {
++  // Accounts sit around $10k, so a tight range needs full figures to stay distinct.
++  if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(2)}M`;
++  return `$${Math.round(n).toLocaleString("en-US")}`;
++}
+diff --git a/6_mcp/frontend/src/heatmap.ts b/6_mcp/frontend/src/heatmap.ts
+new file mode 100644
+index 0000000..5a80252
+--- /dev/null
++++ b/6_mcp/frontend/src/heatmap.ts
+@@ -0,0 +1,75 @@
++// Holdings heatmap: one tile per symbol, size proportional to market value,
++// colour by unrealised profit. Tiles flash green or red when the price ticks.
++
++import type { Holding } from "./api";
++
++const FLASH_MS = 600;
++
++export class Heatmap {
++  private host: HTMLElement;
++  private tiles = new Map<string, HTMLElement>();
++
++  constructor(host: HTMLElement) {
++    this.host = host;
++    host.classList.add("heatmap");
++  }
++
++  render(holdings: Holding[], priceDirections: Record<string, "up" | "down" | "same">): void {
++    const symbols = new Set(holdings.map((h) => h.symbol));
++
++    for (const [symbol, el] of this.tiles) {
++      if (!symbols.has(symbol)) {
++        el.remove();
++        this.tiles.delete(symbol);
++      }
++    }
++
++    if (holdings.length === 0) {
++      this.host.dataset.empty = "true";
++      return;
++    }
++    delete this.host.dataset.empty;
++
++    const totalValue = holdings.reduce((s, h) => s + h.market_value, 0);
++
++    for (const h of holdings) {
++      const share = totalValue > 0 ? h.market_value / totalValue : 1 / holdings.length;
++      let tile = this.tiles.get(h.symbol);
++      if (!tile) {
++        tile = this.createTile(h.symbol);
++        this.host.append(tile);
++        this.tiles.set(h.symbol, tile);
++      }
++      tile.style.flexGrow = String(Math.max(0.05, share));
++      tile.dataset.pnl = h.unrealized_pnl >= 0 ? "up" : "down";
++      tile.querySelector(".heatmap-value")!.textContent = formatMoney(h.market_value);
++
++      const dir = priceDirections[h.symbol];
++      if (dir === "up" || dir === "down") flash(tile, dir);
++    }
++  }
++
++  private createTile(symbol: string): HTMLElement {
++    const tile = document.createElement("div");
++    tile.className = "heatmap-tile";
++    tile.innerHTML = `
++      <span class="heatmap-ticker">${symbol}</span>
++      <span class="heatmap-value"></span>
++    `;
++    return tile;
++  }
++}
++
++function flash(tile: HTMLElement, dir: "up" | "down"): void {
++  tile.classList.remove("flash-up", "flash-down");
++  // Force reflow so the animation restarts when the direction repeats.
++  void tile.offsetWidth;
++  tile.classList.add(dir === "up" ? "flash-up" : "flash-down");
++  setTimeout(() => tile.classList.remove("flash-up", "flash-down"), FLASH_MS);
++}
++
++function formatMoney(n: number): string {
++  if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(2)}M`;
++  if (n >= 1_000) return `$${(n / 1_000).toFixed(1)}k`;
++  return `$${n.toFixed(0)}`;
++}
+diff --git a/6_mcp/frontend/src/log.ts b/6_mcp/frontend/src/log.ts
+new file mode 100644
+index 0000000..3452a75
+--- /dev/null
++++ b/6_mcp/frontend/src/log.ts
+@@ -0,0 +1,51 @@
++// The per-trader activity log. Rows come from the backend already coloured by
++// type (the same custom-tracing colours as the Gradio dashboard).
++
++import type { LogRow } from "./api";
++
++export class LogView {
++  private host: HTMLElement;
++
++  constructor(host: HTMLElement) {
++    this.host = host;
++    host.classList.add("log");
++  }
++
++  render(rows: LogRow[]): void {
++    this.host.innerHTML = "";
++    if (rows.length === 0) {
++      const empty = document.createElement("div");
++      empty.className = "log-empty";
++      empty.textContent = "Waiting for activity";
++      this.host.append(empty);
++      return;
++    }
++    for (const row of rows) {
++      const el = document.createElement("div");
++      el.className = "log-row";
++
++      const time = document.createElement("span");
++      time.className = "log-time";
++      time.textContent = timeOf(row.datetime);
++
++      const type = document.createElement("span");
++      type.className = "log-type";
++      type.style.color = row.color;
++      type.textContent = row.type;
++
++      const text = document.createElement("span");
++      text.className = "log-text";
++      text.textContent = row.message;
++
++      el.append(time, type, text);
++      this.host.append(el);
++    }
++    this.host.scrollTop = this.host.scrollHeight;
++  }
++}
++
++function timeOf(stamp: string): string {
++  // Stored as "YYYY-MM-DD HH:MM:SS"; show just the time.
++  const parts = stamp.split(" ");
++  return parts.length > 1 ? parts[1] : stamp;
++}
+diff --git a/6_mcp/frontend/src/main.ts b/6_mcp/frontend/src/main.ts
+new file mode 100644
+index 0000000..bcad6bb
+--- /dev/null
++++ b/6_mcp/frontend/src/main.ts
+@@ -0,0 +1,117 @@
++// App entry point: build a panel per trader, then poll the backend for portfolio
++// data and activity logs. The trading floor runs on its own; this only reads.
++
++import { getMarket, getTrader, getTraderLogs, getTraders } from "./api";
++import { TraderPanel } from "./panel";
++import { TraderState } from "./state";
++import { initTheme } from "./theme";
++
++const DATA_POLL_MS = 6000;
++const LOG_POLL_MS = 2000;
++
++initTheme(document.getElementById("btn-theme") as HTMLButtonElement);
++
++const panelHost = document.getElementById("panels")!;
++const states = new Map<string, TraderState>();
++const panels = new Map<string, TraderPanel>();
++
++async function loadMarket(): Promise<void> {
++  try {
++    const market = await getMarket();
++    const badge = document.getElementById("market-badge")!;
++    badge.dataset.source = market.source;
++    document.getElementById("market-source")!.textContent =
++      market.source === "massive" ? "Live market" : "Simulated";
++    document.getElementById("market-status")!.textContent = market.is_market_open
++      ? "Market open"
++      : "Market closed";
++  } catch (err) {
++    console.error("market fetch failed", err);
++  }
++}
++
++async function buildPanels(): Promise<void> {
++  const traders = await getTraders();
++  for (const info of traders) {
++    const state = new TraderState(info);
++    const panel = new TraderPanel(state);
++    states.set(info.name, state);
++    panels.set(info.name, panel);
++    panelHost.append(panel.root);
++    panel.mount();
++  }
++}
++
++async function pollData(): Promise<void> {
++  await Promise.all(
++    [...states].map(async ([name, state]) => {
++      try {
++        state.recordDetail(await getTrader(name));
++        panels.get(name)!.update();
++      } catch (err) {
++        console.error(`data fetch failed for ${name}`, err);
++      }
++    }),
++  );
++  markLeader();
++  renderReturns();
++}
++
++function renderReturns(): void {
++  const list = document.getElementById("returns-list")!;
++  const rows = [...states.values()]
++    .map((s) => s.detail)
++    .filter((d): d is NonNullable<typeof d> => d !== null)
++    .map((d) => {
++      const initial = d.portfolio_value - d.pnl; // each trader started with this
++      return { name: d.name, pct: initial > 0 ? (d.pnl / initial) * 100 : 0 };
++    })
++    .sort((a, b) => b.pct - a.pct);
++  list.innerHTML = "";
++  for (const r of rows) {
++    const li = document.createElement("li");
++    li.className = "returns-row";
++    const name = document.createElement("span");
++    name.className = "returns-name";
++    name.textContent = r.name;
++    const pct = document.createElement("span");
++    pct.className = "returns-pct";
++    pct.dataset.trend = r.pct >= 0 ? "up" : "down";
++    pct.textContent = `${r.pct >= 0 ? "+" : ""}${r.pct.toFixed(1)}%`;
++    li.append(name, pct);
++    list.append(li);
++  }
++}
++
++async function pollLogs(): Promise<void> {
++  await Promise.all(
++    [...panels].map(async ([name, panel]) => {
++      try {
++        panel.renderLogs(await getTraderLogs(name));
++      } catch (err) {
++        console.error(`log fetch failed for ${name}`, err);
++      }
++    }),
++  );
++}
++
++function markLeader(): void {
++  const values = [...states.values()].map((s) => s.detail?.portfolio_value).filter((v): v is number => v !== undefined);
++  const best = Math.max(...values);
++  // Only crown a single clear leader; a tie (e.g. before any trading) highlights nobody.
++  const unique = values.filter((v) => v === best).length === 1;
++  for (const [name, state] of states) {
++    panels.get(name)!.setLeader(unique && state.detail?.portfolio_value === best);
++  }
++}
++
++async function main(): Promise<void> {
++  await loadMarket();
++  await buildPanels();
++  await pollData();
++  await pollLogs();
++  setInterval(pollData, DATA_POLL_MS);
++  setInterval(pollLogs, LOG_POLL_MS);
++}
++
++main().catch((err) => console.error("startup failed", err));
+diff --git a/6_mcp/frontend/src/panel.ts b/6_mcp/frontend/src/panel.ts
+new file mode 100644
+index 0000000..cfbecd9
+--- /dev/null
++++ b/6_mcp/frontend/src/panel.ts
+@@ -0,0 +1,100 @@
++// One trader's quadrant: header with value and profit, chart, heatmap, log.
++
++import type { LogRow } from "./api";
++import { PortfolioChart } from "./chart";
++import { Heatmap } from "./heatmap";
++import { LogView } from "./log";
++import type { TraderState } from "./state";
++import { TransactionsView } from "./transactions";
++
++export class TraderPanel {
++  readonly root: HTMLElement;
++  private state: TraderState;
++  private chart: PortfolioChart | null = null;
++  private heatmap: Heatmap;
++  private log: LogView;
++  private transactions: TransactionsView;
++  private valueEl: HTMLElement;
++  private pnlEl: HTMLElement;
++  private strategyEl: HTMLElement;
++
++  constructor(state: TraderState) {
++    this.state = state;
++    const { name, model_name, lastname } = state.info;
++    this.root = document.createElement("section");
++    this.root.className = "panel";
++    this.root.innerHTML = `
++      <header class="panel-head">
++        <span class="panel-name"></span>
++        <span class="panel-sub"></span>
++        <span class="panel-value" data-trend="flat">$0</span>
++        <span class="panel-pnl"></span>
++        <span class="panel-strategy"></span>
++      </header>
++      <div class="panel-chart"></div>
++      <div class="panel-heatmap"></div>
++      <div class="panel-bottom">
++        <div class="panel-col">
++          <span class="panel-col-label">Activity</span>
++          <div class="panel-log"></div>
++        </div>
++        <div class="panel-col">
++          <span class="panel-col-label">Recent trades</span>
++          <div class="panel-transactions"></div>
++        </div>
++      </div>
++    `;
++    this.root.querySelector(".panel-name")!.textContent = name;
++    this.root.querySelector(".panel-sub")!.textContent = `${model_name} · ${lastname}`;
++    this.valueEl = this.root.querySelector(".panel-value")!;
++    this.pnlEl = this.root.querySelector(".panel-pnl")!;
++    this.strategyEl = this.root.querySelector(".panel-strategy")!;
++    this.heatmap = new Heatmap(this.root.querySelector(".panel-heatmap")!);
++    this.log = new LogView(this.root.querySelector(".panel-log")!);
++    this.transactions = new TransactionsView(this.root.querySelector(".panel-transactions")!);
++    // Chart is created in mount(), after the panel is in the DOM, because uPlot misbehaves
++    // when its host is not laid out at construction time.
++  }
++
++  mount(): void {
++    if (this.chart) return;
++    this.chart = new PortfolioChart(this.root.querySelector(".panel-chart") as HTMLElement);
++  }
++
++  update(): void {
++    const detail = this.state.detail;
++    if (detail) {
++      const trend = detail.pnl >= 0 ? "up" : "down";
++      this.valueEl.textContent = formatMoney(detail.portfolio_value);
++      this.valueEl.dataset.trend = trend;
++      this.pnlEl.dataset.trend = trend;
++      this.pnlEl.textContent = formatPnl(detail.pnl);
++      this.heatmap.render(detail.holdings, this.state.priceDirections());
++      this.state.rememberPrices();
++      const strategy = detail.strategy.trim();
++      this.strategyEl.textContent = strategy || "No strategy set yet";
++      this.strategyEl.title = strategy;
++      this.strategyEl.classList.toggle("empty", !strategy);
++      this.transactions.render(detail.transactions);
++    }
++    this.chart?.update(this.state.chart);
++  }
++
++  renderLogs(rows: LogRow[]): void {
++    this.log.render(rows);
++  }
++
++  setLeader(isLeader: boolean): void {
++    if (isLeader) this.root.dataset.leader = "true";
++    else delete this.root.dataset.leader;
++  }
++}
++
++function formatMoney(n: number): string {
++  return n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
++}
++
++function formatPnl(n: number): string {
++  const sign = n >= 0 ? "+" : "-";
++  return `${sign}${Math.abs(n).toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 })}`;
++}
+diff --git a/6_mcp/frontend/src/state.ts b/6_mcp/frontend/src/state.ts
+new file mode 100644
+index 0000000..794bd2e
+--- /dev/null
++++ b/6_mcp/frontend/src/state.ts
+@@ -0,0 +1,56 @@
++// Per-trader client state. The chart is seeded once from the stored time series,
++// then grows a point on every poll so the line keeps moving while you watch.
++
++import type { Holding, TraderDetail, TraderInfo } from "./api";
++
++export const CHART_MAX_POINTS = 5000;
++
++export interface ChartPoint {
++  t: number; // unix seconds
++  value: number;
++}
++
++function toUnixSeconds(stamp: string): number {
++  // Stored timestamps are "YYYY-MM-DD HH:MM:SS" local time.
++  return new Date(stamp.replace(" ", "T")).getTime() / 1000;
++}
++
++export class TraderState {
++  readonly info: TraderInfo;
++  detail: TraderDetail | null = null;
++  chart: ChartPoint[] = [];
++  previousPrices: Record<string, number> = {};
++  private seeded = false;
++
++  constructor(info: TraderInfo) {
++    this.info = info;
++  }
++
++  recordDetail(detail: TraderDetail): void {
++    this.detail = detail;
++    if (!this.seeded) {
++      this.chart = detail.time_series.map((p) => ({ t: toUnixSeconds(p.datetime), value: p.value }));
++      this.seeded = true;
++    }
++    this.chart.push({ t: Date.now() / 1000, value: detail.portfolio_value });
++    if (this.chart.length > CHART_MAX_POINTS) {
++      this.chart.splice(0, this.chart.length - CHART_MAX_POINTS);
++    }
++  }
++
++  priceDirections(): Record<string, "up" | "down" | "same"> {
++    const out: Record<string, "up" | "down" | "same"> = {};
++    if (!this.detail) return out;
++    for (const h of this.detail.holdings) {
++      const prev = this.previousPrices[h.symbol];
++      out[h.symbol] =
++        prev === undefined || prev === h.price ? "same" : h.price > prev ? "up" : "down";
++    }
++    return out;
++  }
++
++  rememberPrices(): void {
++    if (!this.detail) return;
++    this.previousPrices = Object.fromEntries(this.detail.holdings.map((h: Holding) => [h.symbol, h.price]));
++  }
++}
+diff --git a/6_mcp/frontend/src/styles.css b/6_mcp/frontend/src/styles.css
+new file mode 100644
+index 0000000..2726b92
+--- /dev/null
++++ b/6_mcp/frontend/src/styles.css
+@@ -0,0 +1,461 @@
++/* Autonomous Traders dashboard, dark by default.
++   Palette: accent yellow #ecad0a, blue #209dd7, purple #753991, elegant greys.
++   No gradients in the chrome; the only gradient is the soft fill under each chart. */
++
++:root {
++  --yellow: #ecad0a;
++  --blue: #209dd7;
++  --purple: #753991;
++
++  --trend-up: #3fbf7f;
++  --trend-down: #e05560;
++  --flash-up: #6fe8a8;
++  --flash-down: #ff7b86;
++}
++
++:root[data-theme="dark"] {
++  --bg: #0f1115;
++  --bg-raised: #171a21;
++  --bg-sunk: #0a0c10;
++  --border: #2a2f38;
++  --grid: #232831;
++  --fg: #e6e8ec;
++  --fg-muted: #8a93a1;
++  --fg-dim: #5d6672;
++}
++
++:root[data-theme="light"] {
++  --bg: #f6f7f9;
++  --bg-raised: #ffffff;
++  --bg-sunk: #edf0f3;
++  --border: #dadfe5;
++  --grid: #e8ecf1;
++  --fg: #1a1d22;
++  --fg-muted: #5b6470;
++  --fg-dim: #8a93a1;
++}
++
++* { box-sizing: border-box; }
++
++html, body {
++  margin: 0;
++  padding: 0;
++  height: 100%;
++  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, system-ui, sans-serif;
++  font-size: 14px;
++  background: var(--bg);
++  color: var(--fg);
++}
++
++body {
++  display: grid;
++  grid-template-columns: 220px 1fr;
++  /* Lock the body to the viewport so each panel row (1fr) has a concrete size for
++     uPlot's canvas to fill. Without this, 1fr falls back to content height and the
++     chart collapses to its minimum. */
++  height: 100vh;
++  overflow: hidden;
++}
++
++/* ---- Sidebar ---- */
++
++.sidebar {
++  display: flex;
++  flex-direction: column;
++  gap: 20px;
++  padding: 24px 18px;
++  background: var(--bg-raised);
++  border-right: 1px solid var(--border);
++  overflow-y: auto;
++}
++
++.brand-block {
++  display: flex;
++  flex-direction: column;
++  gap: 3px;
++}
++
++.brand {
++  margin: 0;
++  font-size: 20px;
++  font-weight: 700;
++  letter-spacing: 0.01em;
++  line-height: 1.15;
++  color: var(--yellow);
++}
++
++.brand-sub {
++  margin: 0;
++  font-size: 10px;
++  text-transform: uppercase;
++  letter-spacing: 0.16em;
++  color: var(--fg-dim);
++}
++
++.market {
++  display: flex;
++  flex-direction: column;
++  gap: 7px;
++  padding: 16px 0;
++  border-top: 1px solid var(--border);
++  border-bottom: 1px solid var(--border);
++}
++
++.market-label {
++  font-size: 10px;
++  text-transform: uppercase;
++  letter-spacing: 0.12em;
++  color: var(--fg-dim);
++}
++
++.market-badge {
++  display: inline-flex;
++  align-items: center;
++  gap: 8px;
++  font-size: 15px;
++  font-weight: 600;
++  color: var(--fg);
++}
++
++.market-dot {
++  width: 9px;
++  height: 9px;
++  border-radius: 50%;
++  background: var(--fg-muted);
++}
++.market-badge[data-source="simulator"] .market-dot { background: var(--blue); }
++.market-badge[data-source="massive"] .market-dot { background: var(--trend-up); }
++
++.market-status {
++  font-size: 11px;
++  color: var(--fg-muted);
++}
++
++.returns {
++  display: flex;
++  flex-direction: column;
++  gap: 8px;
++}
++.returns-label {
++  font-size: 10px;
++  text-transform: uppercase;
++  letter-spacing: 0.12em;
++  color: var(--fg-dim);
++}
++.returns-list {
++  list-style: none;
++  margin: 0;
++  padding: 0;
++  display: flex;
++  flex-direction: column;
++  gap: 7px;
++}
++.returns-row {
++  display: flex;
++  align-items: baseline;
++  justify-content: space-between;
++  gap: 8px;
++}
++.returns-name {
++  font-size: 13px;
++  color: var(--fg);
++}
++.returns-pct {
++  font-variant-numeric: tabular-nums;
++  font-size: 13px;
++  font-weight: 600;
++  color: var(--fg-muted);
++}
++.returns-pct[data-trend="up"] { color: var(--trend-up); }
++.returns-pct[data-trend="down"] { color: var(--trend-down); }
++
++.sidebar-spacer { flex: 1; }
++
++.theme-toggle {
++  align-self: flex-start;
++  display: inline-flex;
++  align-items: center;
++  justify-content: center;
++  width: 36px;
++  height: 36px;
++  padding: 0;
++  border-radius: 6px;
++  border: 1px solid var(--border);
++  background: transparent;
++  color: var(--fg-muted);
++  cursor: pointer;
++  transition: color 120ms, border-color 120ms;
++}
++.theme-toggle:hover {
++  color: var(--fg);
++  border-color: var(--fg-muted);
++}
++
++.theme-icon { display: none; }
++[data-theme="dark"] .icon-moon { display: block; }
++[data-theme="light"] .icon-sun { display: block; }
++
++/* ---- Panels ---- */
++
++.panels {
++  display: grid;
++  grid-template-columns: 1fr 1fr;
++  grid-template-rows: 1fr 1fr;
++  gap: 12px;
++  padding: 12px;
++  min-height: 0;
++}
++
++.panel {
++  display: grid;
++  grid-template-rows: auto 2fr auto 1fr;
++  gap: 10px;
++  padding: 16px;
++  background: var(--bg-raised);
++  border: 1px solid var(--border);
++  border-radius: 10px;
++  min-height: 0;
++  overflow: hidden;
++  transition: border-color 200ms, box-shadow 200ms;
++}
++
++/* Live leader: the trader with the highest portfolio value right now. */
++.panel[data-leader="true"] {
++  border-color: var(--yellow);
++  box-shadow: 0 0 0 1px var(--yellow), 0 0 20px color-mix(in srgb, var(--yellow) 22%, transparent);
++}
++
++.panel-head {
++  display: flex;
++  flex-direction: column;
++  align-items: center;
++  gap: 2px;
++  text-align: center;
++}
++
++.panel-name {
++  font-size: 13px;
++  font-weight: 600;
++  text-transform: uppercase;
++  letter-spacing: 0.12em;
++  color: var(--fg);
++}
++
++.panel-sub {
++  font-size: 11px;
++  color: var(--fg-muted);
++}
++
++.panel-value {
++  font-variant-numeric: tabular-nums;
++  font-size: 34px;
++  font-weight: 500;
++  color: var(--fg);
++  line-height: 1.15;
++  margin-top: 4px;
++}
++.panel-value[data-trend="up"] { color: var(--trend-up); }
++.panel-value[data-trend="down"] { color: var(--trend-down); }
++
++.panel-pnl {
++  font-variant-numeric: tabular-nums;
++  font-size: 13px;
++  font-weight: 600;
++  color: var(--fg-muted);
++}
++.panel-pnl[data-trend="up"] { color: var(--trend-up); }
++.panel-pnl[data-trend="down"] { color: var(--trend-down); }
++
++.panel-strategy {
++  margin-top: 6px;
++  max-width: 94%;
++  font-size: 11px;
++  line-height: 1.4;
++  color: var(--fg-muted);
++  display: -webkit-box;
++  -webkit-line-clamp: 2;
++  -webkit-box-orient: vertical;
++  overflow: hidden;
++  cursor: default;
++}
++.panel-strategy.empty {
++  color: var(--fg-dim);
++  font-style: italic;
++}
++
++.panel-chart {
++  min-height: 120px;
++  min-width: 0;
++  height: 100%;
++  position: relative;
++  overflow: hidden;
++}
++
++/* ---- Heatmap ---- */
++
++.heatmap {
++  display: flex;
++  flex-wrap: wrap;
++  gap: 4px;
++  min-height: 44px;
++  background: var(--bg-sunk);
++  border: 1px solid var(--border);
++  border-radius: 6px;
++  padding: 4px;
++  overflow: hidden;
++}
++.heatmap[data-empty="true"]::before {
++  content: "No holdings";
++  display: grid;
++  place-items: center;
++  width: 100%;
++  color: var(--fg-dim);
++  font-size: 12px;
++}
++
++.heatmap-tile {
++  display: flex;
++  flex-direction: column;
++  justify-content: space-between;
++  padding: 6px 8px;
++  min-width: 56px;
++  flex-basis: 0;
++  border-radius: 4px;
++  background: color-mix(in srgb, var(--trend-up) 20%, var(--bg-sunk));
++  color: var(--fg);
++  font-variant-numeric: tabular-nums;
++  transition: background 180ms;
++}
++.heatmap-tile[data-pnl="down"] {
++  background: color-mix(in srgb, var(--trend-down) 20%, var(--bg-sunk));
++}
++
++.heatmap-ticker {
++  font-weight: 600;
++  font-size: 11px;
++  letter-spacing: 0.06em;
++}
++.heatmap-value {
++  font-size: 11px;
++  color: var(--fg-muted);
++}
++
++.heatmap-tile.flash-up { animation: flash-up 600ms ease-out; }
++.heatmap-tile.flash-down { animation: flash-down 600ms ease-out; }
++
++@keyframes flash-up {
++  0%   { background: var(--flash-up); }
++  100% { background: color-mix(in srgb, var(--trend-up) 20%, var(--bg-sunk)); }
++}
++@keyframes flash-down {
++  0%   { background: var(--flash-down); }
++  100% { background: color-mix(in srgb, var(--trend-down) 20%, var(--bg-sunk)); }
++}
++
++/* ---- Log ---- */
++
++.log {
++  height: 100%;
++  overflow-y: auto;
++  background: var(--bg-sunk);
++  border: 1px solid var(--border);
++  border-radius: 6px;
++  padding: 6px 8px;
++  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
++  font-size: 11px;
++  line-height: 1.5;
++}
++
++.log-empty {
++  color: var(--fg-dim);
++  font-style: italic;
++}
++
++.log-row {
++  display: flex;
++  gap: 6px;
++  padding: 1px 0;
++  align-items: baseline;
++  white-space: nowrap;
++}
++.log-time {
++  flex: none;
++  color: var(--fg-dim);
++}
++.log-type {
++  flex: none;
++  text-transform: uppercase;
++  font-size: 9px;
++  letter-spacing: 0.08em;
++  font-weight: 700;
++}
++.log-text {
++  flex: 1;
++  min-width: 0;
++  color: var(--fg-muted);
++  overflow: hidden;
++  text-overflow: ellipsis;
++}
++
++/* ---- Bottom row: activity log + recent trades ---- */
++
++.panel-bottom {
++  display: grid;
++  grid-template-columns: 1fr 1fr;
++  gap: 10px;
++  min-height: 0;
++}
++.panel-col {
++  display: grid;
++  grid-template-rows: auto 1fr;
++  gap: 4px;
++  min-height: 0;
++}
++.panel-col-label {
++  font-size: 9px;
++  text-transform: uppercase;
++  letter-spacing: 0.12em;
++  color: var(--fg-dim);
++}
++
++.txns {
++  height: 100%;
++  overflow-y: auto;
++  background: var(--bg-sunk);
++  border: 1px solid var(--border);
++  border-radius: 6px;
++  padding: 6px 8px;
++  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
++  font-size: 11px;
++  line-height: 1.5;
++}
++.txn-empty {
++  color: var(--fg-dim);
++  font-style: italic;
++}
++.txn-row {
++  display: flex;
++  gap: 6px;
++  padding: 1px 0;
++  align-items: baseline;
++  white-space: nowrap;
++}
++.txn-date {
++  flex: none;
++  color: var(--fg-dim);
++}
++.txn-side {
++  flex: none;
++  font-size: 9px;
++  font-weight: 700;
++  letter-spacing: 0.06em;
++}
++.txn-side[data-side="buy"] { color: var(--trend-up); }
++.txn-side[data-side="sell"] { color: var(--trend-down); }
++.txn-detail {
++  flex: 1;
++  min-width: 0;
++  color: var(--fg-muted);
++  overflow: hidden;
++  text-overflow: ellipsis;
++}
+diff --git a/6_mcp/frontend/src/theme.ts b/6_mcp/frontend/src/theme.ts
+new file mode 100644
+index 0000000..c296bd4
+--- /dev/null
++++ b/6_mcp/frontend/src/theme.ts
+@@ -0,0 +1,20 @@
++// Light/dark theme. The choice is a data-theme attribute on <html>; the CSS
++// reacts through its :root[data-theme="..."] blocks. Persisted in localStorage.
++
++const KEY = "trading-floor-theme";
++type Theme = "dark" | "light";
++
++function apply(theme: Theme): void {
++  document.documentElement.dataset.theme = theme;
++  window.dispatchEvent(new Event("themechange"));
++}
++
++export function initTheme(button: HTMLButtonElement): void {
++  const saved = (localStorage.getItem(KEY) as Theme | null) ?? "dark";
++  apply(saved);
++  button.addEventListener("click", () => {
++    const next: Theme = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
++    apply(next);
++    localStorage.setItem(KEY, next);
++  });
++}
+diff --git a/6_mcp/frontend/src/transactions.ts b/6_mcp/frontend/src/transactions.ts
+new file mode 100644
+index 0000000..e1250d2
+--- /dev/null
++++ b/6_mcp/frontend/src/transactions.ts
+@@ -0,0 +1,51 @@
++// A trader's recent trades, newest first. Mirrors the activity log's compact style.
++
++import type { Transaction } from "./api";
++
++const MAX_ROWS = 12;
++
++export class TransactionsView {
++  private host: HTMLElement;
++
++  constructor(host: HTMLElement) {
++    this.host = host;
++    host.classList.add("txns");
++  }
++
++  render(transactions: Transaction[]): void {
++    this.host.innerHTML = "";
++    if (transactions.length === 0) {
++      const empty = document.createElement("div");
++      empty.className = "txn-empty";
++      empty.textContent = "No trades yet";
++      this.host.append(empty);
++      return;
++    }
++    for (const t of transactions.slice(-MAX_ROWS).reverse()) {
++      const row = document.createElement("div");
++      row.className = "txn-row";
++
++      const date = document.createElement("span");
++      date.className = "txn-date";
++      date.textContent = dateOf(t.timestamp);
++
++      const side = document.createElement("span");
++      side.className = "txn-side";
++      side.dataset.side = t.quantity >= 0 ? "buy" : "sell";
++      side.textContent = t.quantity >= 0 ? "BUY" : "SELL";
++
++      const detail = document.createElement("span");
++      detail.className = "txn-detail";
++      detail.textContent = `${Math.abs(t.quantity)} ${t.symbol} @ $${t.price.toFixed(2)}`;
++
++      row.append(date, side, detail);
++      this.host.append(row);
++    }
++  }
++}
++
++function dateOf(stamp: string): string {
++  // "YYYY-MM-DD HH:MM:SS" -> "MM-DD"
++  const parts = stamp.split(" ")[0].split("-");
++  return parts.length === 3 ? `${parts[1]}-${parts[2]}` : stamp;
++}
+diff --git a/6_mcp/frontend/tsconfig.json b/6_mcp/frontend/tsconfig.json
+new file mode 100644
+index 0000000..690fbb4
+--- /dev/null
++++ b/6_mcp/frontend/tsconfig.json
+@@ -0,0 +1,18 @@
++{
++  "compilerOptions": {
++    "target": "ES2022",
++    "module": "ESNext",
++    "moduleResolution": "bundler",
++    "lib": ["ES2022", "DOM", "DOM.Iterable"],
++    "strict": true,
++    "noUnusedLocals": true,
++    "noUnusedParameters": true,
++    "noFallthroughCasesInSwitch": true,
++    "skipLibCheck": true,
++    "isolatedModules": true,
++    "noEmit": true,
++    "esModuleInterop": true,
++    "resolveJsonModule": true
++  },
++  "include": ["src"]
++}
+diff --git a/6_mcp/frontend/vite.config.ts b/6_mcp/frontend/vite.config.ts
+new file mode 100644
+index 0000000..c8650fc
+--- /dev/null
++++ b/6_mcp/frontend/vite.config.ts
+@@ -0,0 +1,18 @@
++import { defineConfig } from "vite";
++
++// The browser only ever talks to the Vite dev server. Calls to /api are proxied
++// to the FastAPI backend, so there is no cross-origin request and no CORS to set up.
++export default defineConfig({
++  server: {
++    port: 5173,
++    proxy: {
++      "/api": {
++        target: "http://127.0.0.1:8000",
++        changeOrigin: true,
++      },
++    },
++  },
++  build: {
++    outDir: "dist",
++  },
++});
+diff --git a/GEMINI_MIGRATION_NOTES.md b/GEMINI_MIGRATION_NOTES.md
+new file mode 100644
+index 0000000..cb536b9
+--- /dev/null
++++ b/GEMINI_MIGRATION_NOTES.md
+@@ -0,0 +1,57 @@
++# Gemini移行メモ
++
++このリポジトリのメインLLMをOpenAIから **Gemini (`gemini-flash-latest`)** に切り替えた際の変更点まとめです。
++
++## 必要な準備
++
++1. `.env` に `GOOGLE_API_KEY=...` を設定してください（Google AI Studioで取得）。
++   Week 2/3日目の`.env`説明にすでに項目があるはずです。
++2. `4_langchain_langgraph` を使う場合は、リポジトリルートで `uv sync` を実行してください
++   （`pyproject.toml` に `langchain-google-genai` を追加したため）。
++3. `5_agent_frameworks/4_mastra` はnpmパッケージの追加は不要です
++   （既存の `@ai-sdk/openai` の `baseURL` をGeminiに向けているだけです）。
++
++## 変更方式（共通の考え方）
++
++- OpenAI Agents SDK系（`2_openai`, `6_mcp`）: `AsyncOpenAI(base_url=Geminiのエンドポイント)` を
++  `OpenAIChatCompletionsModel` でラップし、`MODEL_NAME` としてどのエージェントにも渡す。
++- LangChain（`4_langchain_langgraph`）: `ChatOpenAI` → `ChatGoogleGenerativeAI`、
++  `create_agent(model="openai:...")` → `model="google_genai:gemini-flash-latest"`。
++- Google ADK（`5_agent_frameworks/1_google_adk_a2a`）: もとからGeminiネイティブ。
++  モデル文字列を`gemini-flash-latest`に統一しただけ。
++- Strands / Pydantic AI（`2_strands_pydantic`）、MAF / Agno（`3_maf_agno`）:
++  各フレームワークのOpenAI互換クライアント（`OpenAIModel`, `OpenAIChatModel`, `OpenAIChatClient`,
++  `OpenAILike`）の`base_url`をGeminiのエンドポイントに向けた。
++- Mastra（`4_mastra`, TypeScript）: `@ai-sdk/openai`の`createOpenAI({baseURL, apiKey})`を
++  Gemini向けに構築し、共通の`gemini.ts`から読み込む。
++
++## 意図的にOpenAIのまま残した箇所
++
++- `2_openai/deep_research/search_agent.py`、`2_openai/4_lab4.ipynb`の検索エージェント:
++  OpenAI Agents SDKの`WebSearchTool()`はOpenAIホスト専用ツールで、
++  GeminiのOpenAI互換(Chat Completions)エンドポイントでは動作しないため。
++- `3_lab3.ipynb`（`2_openai`, `4_langchain_langgraph`両方）のGroq/OpenRouter比較セクション:
++  ご指示により変更していません。
++
++## 解決済みだった問題（Gemini移行とは無関係、リポジトリ自体の欠落）
++
++`6_mcp`フォルダで、以下のファイルが**存在しないのに参照されている**ことが判明しましたが、
++本家の英語版リポジトリ(`ed-donner/agents`)から取得して復元しました:
++
++- `backend/__init__.py`
++- `backend/traders.py` — デフォルトモデルを`gemini-flash-latest`に変更済み。
++  内部の`get_model()`がモデル名に`"gemini"`を含む場合、自動でGeminiのOpenAI互換
++  エンドポイントを使うようになっている(このロジックはもともと入っていた)。
++- `backend/tracers.py` — ローカルDBにログを書き込む`LogTracer`。OpenAIのトレースAPIには
++  依存しないため、そのままGemini環境でも動作する。
++- `backend/trading_floor.py` — `USE_MANY_MODELS=False`時のデフォルトモデルを
++  `gemini-flash-latest`に変更済み。`USE_MANY_MODELS=True`時の多モデル比較リストは
++  意図的にそのまま(GPT/DeepSeek/Gemini/Grokの比較用)。
++- `frontend/`ディレクトリ一式 — OpenAI/モデルへの依存はなく、バックエンドAPIを
++  読むだけの表示層なので無変更でコピー。
++
++`4_lab4.ipynb`のセットアップセルも、この復元後の`traders.py`の設計(`get_model()`が
++Gemini判定を内部で行う)に合わせて簡略化しました。**`set_tracing_disabled(True)`は
++呼んでいません** — `tracers.py`のダッシュボード用ローカルトレースがそれに依存しているためです。
++(OpenAIのホスト型トレースビューア(platform.openai.com/traces)だけは、有効なAPIキーが
++ないため引き続き使えません。)
+diff --git a/pyproject.toml b/pyproject.toml
+index 2cbc933..503e199 100644
+--- a/pyproject.toml
++++ b/pyproject.toml
+@@ -14,6 +14,7 @@ dependencies = [
+     "ipywidgets>=8.1.8",
+     "langchain>=1.3.4",
+     "langchain-community>=0.4.2",
++    "langchain-google-genai>=4.2.4",
+     "langchain-mcp-adapters>=0.2.2",
+     "langchain-openai>=1.2.2",
+     "langgraph>=1.2.4",

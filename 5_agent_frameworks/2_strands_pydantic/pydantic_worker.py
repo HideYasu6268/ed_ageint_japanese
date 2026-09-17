@@ -28,13 +28,22 @@ if TASK_ID is not None:
 from dotenv import load_dotenv  # noqa: E402
 from pydantic_ai import Agent  # noqa: E402
 from pydantic_ai.mcp import MCPToolset  # noqa: E402
+from pydantic_ai.models.openai import OpenAIChatModel  # noqa: E402
+from pydantic_ai.providers.openai import OpenAIProvider  # noqa: E402
 from fastmcp.client.transports import StdioTransport  # noqa: E402
 
 import board  # noqa: E402
 
 load_dotenv(override=True)
 
-MODEL = f"openai-chat:{os.environ.get('WORKER_MODEL', 'gpt-5.4-mini')}"
+# メインモデルをOpenAIからGeminiに切り替え(GeminiのOpenAI互換エンドポイント経由)
+MODEL = OpenAIChatModel(
+    os.environ.get("WORKER_MODEL", "gemini-flash-latest"),
+    provider=OpenAIProvider(
+        base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
+        api_key=os.environ["GOOGLE_API_KEY"],
+    ),
+)
 WORKSPACE = Path(__file__).resolve().parent / "workspace"
 GOAL = "Read notes.txt, translate its contents into natural Spanish, and write the Spanish to spanish.txt."
 # ファイルツールが書き込める場所: 単体実行時はこのワーカー自身のworkspace、Day5のタスクを

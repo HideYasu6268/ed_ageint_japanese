@@ -16,6 +16,7 @@ import "./env.ts";
 import { join } from "node:path";
 import { mkdirSync, rmSync, existsSync, readFileSync } from "node:fs";
 import { Agent } from "@mastra/core/agent";
+import { gemini } from "./gemini.ts";
 import { boardTools, makeFilesystem, WORKSPACE } from "./tools.ts";
 import { resetBoard, addGoal, claimTodo, showBoard } from "./board.ts";
 
@@ -41,7 +42,7 @@ const worker = new Agent({
   id: "worker",
   name: "Worker",
   instructions: INSTRUCTIONS,
-  model: "openai/gpt-5.4-mini",
+  model: gemini("gemini-flash-latest"),
   tools: { ...boardTools, ...(await filesystem.listTools()) },
 });
 

@@ -27,7 +27,7 @@ from mcp import StdioServerParameters  # noqa: E402
 load_dotenv(override=True)
 os.environ.setdefault("GOOGLE_GENAI_USE_VERTEXAI", "FALSE")
 
-MODEL = "gemini-3.1-flash-lite"
+MODEL = "gemini-flash-latest"
 WORKSPACE = Path(__file__).resolve().parent / "workspace"
 WORKSPACE.mkdir(exist_ok=True)
 

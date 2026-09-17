@@ -15,6 +15,7 @@
 
 import "./env.ts";
 import { Agent } from "@mastra/core/agent";
+import { gemini } from "./gemini.ts";
 import { showTodos, completeTask } from "./tools.ts";
 import { resetBoard, addGoal, showBoard } from "./board.ts";
 
@@ -25,7 +26,7 @@ const boardAgent = new Agent({
   id: "board-agent",
   name: "Board Agent",
   instructions: "You help manage a shared todo board.",
-  model: "openai/gpt-5.4-mini",
+  model: gemini("gemini-flash-latest"),
   tools: { showTodos, completeTask },
 });
 

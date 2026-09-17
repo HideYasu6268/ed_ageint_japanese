@@ -3,7 +3,12 @@ from dotenv import load_dotenv
 import os
 
 load_dotenv(override=True)
-MODEL_NAME = os.getenv("DEFAULT_MODEL_NAME", "gpt-5.4-mini")
+
+# 注意: このエージェントだけはOpenAIのモデルを使い続けます。
+# WebSearchTool()はOpenAIがホストする専用ツールで、Responses API経由でのみ動作し、
+# GeminiのOpenAI互換(Chat Completions)エンドポイントでは利用できないためです。
+# それ以外のエージェント(planner/writer/email)はGeminiに切り替え済みです。
+MODEL_NAME = os.getenv("OPENAI_MODEL_NAME", "gpt-5.4-mini")
 
 INSTRUCTIONS = """
 You are a research assistant. Given a search term, you search the web for that term and 

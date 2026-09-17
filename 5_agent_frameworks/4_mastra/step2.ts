@@ -8,12 +8,13 @@
 
 import "./env.ts";
 import { Agent } from "@mastra/core/agent";
+import { gemini } from "./gemini.ts";
 
 const agent = new Agent({
   id: "assistant",
   name: "Assistant",
   instructions: "You are a concise, friendly assistant. Reply in a single short sentence.",
-  model: "openai/gpt-5.4-mini",
+  model: gemini("gemini-flash-latest"),
 });
 
 const reply = await agent.generate("Say hello in Spanish.");

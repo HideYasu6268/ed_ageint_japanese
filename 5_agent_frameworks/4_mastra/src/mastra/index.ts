@@ -18,6 +18,7 @@
 import "../../env.ts";
 import { Mastra } from "@mastra/core/mastra";
 import { Agent } from "@mastra/core/agent";
+import { gemini } from "../../gemini.ts";
 import { boardTools } from "../../tools.ts";
 import { resetBoard, addGoal, claimTodo } from "../../board.ts";
 
@@ -32,7 +33,7 @@ export const worker = new Agent({
   name: "Worker",
   instructions:
     "You are a careful worker with a shared todo board. Read the pending goal with show_todos and do what it asks. Always record your finished work by calling complete_task with the goal's id and your result, which marks the goal done. Then reply with your result so the user can read it.",
-  model: "openai/gpt-5.4-mini",
+  model: gemini("gemini-flash-latest"),
   tools: boardTools,
 });
 

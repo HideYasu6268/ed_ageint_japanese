@@ -36,14 +36,21 @@ import board  # noqa: E402
 
 load_dotenv(override=True)
 
-MODEL = os.environ.get("WORKER_MODEL", "gpt-5.4-mini")
+MODEL = os.environ.get("WORKER_MODEL", "gemini-flash-latest")
 WORKSPACE = Path(__file__).resolve().parent / "workspace"
 GOAL = "Read notes.txt, translate its contents into natural Spanish, and write the Spanish to spanish.txt."
 # ファイルツールが書き込める場所: 単体実行時はこのワーカー自身のworkspace、Day5のタスクを
 # 作業しているときは共有の場所(ボードファイルのフォルダ)。
 WORK_DIR = WORKSPACE if TASK_ID is None else Path(sys.argv[2]).resolve().parent
 
-model = OpenAIModel(client_args={"api_key": os.environ["OPENAI_API_KEY"]}, model_id=MODEL)
+# メインモデルをOpenAIからGeminiに切り替え(GeminiのOpenAI互換エンドポイント経由)
+model = OpenAIModel(
+    client_args={
+        "api_key": os.environ["GOOGLE_API_KEY"],
+        "base_url": "https://generativelanguage.googleapis.com/v1beta/openai/",
+    },
+    model_id=MODEL,
+)
 
 
 @tool

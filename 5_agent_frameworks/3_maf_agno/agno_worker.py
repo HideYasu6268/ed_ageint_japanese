@@ -29,7 +29,7 @@ if TASK_ID is not None:
 
 from dotenv import load_dotenv  # noqa: E402
 from agno.agent import Agent  # noqa: E402
-from agno.models.openai import OpenAIChat  # noqa: E402
+from agno.models.openai.like import OpenAILike  # noqa: E402
 from agno.tools.mcp import MCPTools  # noqa: E402
 from mcp import StdioServerParameters  # noqa: E402
 
@@ -44,14 +44,19 @@ import board  # noqa: E402
 
 load_dotenv(override=True)
 
-MODEL = os.environ.get("WORKER_MODEL", "gpt-5.4-mini")
+MODEL = os.environ.get("WORKER_MODEL", "gemini-flash-latest")
 WORKSPACE = Path(__file__).resolve().parent / "workspace"
 GOAL = "Read notes.txt, translate its contents into natural Spanish, and write the Spanish to spanish.txt."
 # ファイルツールが書き込める場所: 単体実行時はこのワーカー自身のworkspace、Day5のタスクを
 # 作業しているときは共有の場所(ボードファイルのフォルダ)。
 WORK_DIR = WORKSPACE if TASK_ID is None else Path(sys.argv[2]).resolve().parent
 
-model = OpenAIChat(id=MODEL)
+# メインモデルをOpenAIからGeminiに切り替え(GeminiのOpenAI互換エンドポイント経由)
+model = OpenAILike(
+    id=MODEL,
+    base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
+    api_key=os.environ["GOOGLE_API_KEY"],
+)
 
 
 def show_todos() -> list[dict]:

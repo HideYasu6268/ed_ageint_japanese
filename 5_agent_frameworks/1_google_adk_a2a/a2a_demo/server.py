@@ -24,7 +24,7 @@ from google.adk.agents import LlmAgent  # noqa: E402
 from google.adk.a2a.utils.agent_to_a2a import to_a2a  # noqa: E402
 
 root_agent = LlmAgent(
-    model="gemini-3.1-flash-lite",
+    model="gemini-flash-latest",
     name="translator_agent",
     description="Translates English text into Spanish.",
     instruction=(
