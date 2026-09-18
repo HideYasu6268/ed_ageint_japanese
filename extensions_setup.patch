@@ -1,0 +1,28 @@
+diff --git a/.devcontainer/devcontainer.json b/.devcontainer/devcontainer.json
+new file mode 100644
+index 0000000..8d293fc
+--- /dev/null
++++ b/.devcontainer/devcontainer.json
+@@ -0,0 +1,12 @@
++{
++  "name": "ed_ageint_japanese",
++  "image": "mcr.microsoft.com/devcontainers/universal:2-linux",
++  "customizations": {
++    "vscode": {
++      "extensions": [
++        "ms-python.python",
++        "ms-toolsai.jupyter"
++      ]
++    }
++  }
++}
+diff --git a/first_command.txt b/first_command.txt
+index 65e778e..7ed97a1 100644
+--- a/first_command.txt
++++ b/first_command.txt
+@@ -1,4 +1,5 @@
+ curl -LsSf https://astral.sh/uv/install.sh | sh
+ source $HOME/.local/bin/env
++code --install-extension ms-python.python --install-extension ms-toolsai.jupyter
+ uv sync
+ uv run jupyter lab

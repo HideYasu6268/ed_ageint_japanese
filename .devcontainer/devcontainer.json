@@ -1,0 +1,12 @@
+{
+  "name": "ed_ageint_japanese",
+  "image": "mcr.microsoft.com/devcontainers/universal:2-linux",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-toolsai.jupyter"
+      ]
+    }
+  }
+}
