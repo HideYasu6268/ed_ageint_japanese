@@ -1,0 +1,74 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# --- 仮想環境 / uv ---
+.venv/
+venv/
+env/
+ENV/
+.uv-cache/
+
+# --- Jupyter / Notebook ---
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# --- 環境変数 / シークレット ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# --- テスト / カバレッジ ---
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+
+# --- エディタ / IDE ---
+.vscode/
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+
+# --- OS ---
+.DS_Store
+Thumbs.db
+
+# --- ログ / 一時ファイル ---
+*.log
+*.tmp
+.cache/
+
+# --- データ・出力(必要に応じて調整) ---
+*.sqlite3
+*.db
+output/
+outputs/
+data/raw/
+
+# --- Codespaces / devcontainer ローカル生成物 ---
+.local/
