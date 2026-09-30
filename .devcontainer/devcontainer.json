@@ -11,5 +11,6 @@
         "ms-toolsai.jupyter"
       ]
     }
-  }
+  },
+  "postCreateCommand": "sudo $(which uv) pip install --system ipykernel"
 }
