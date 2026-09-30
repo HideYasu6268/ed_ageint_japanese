@@ -9,5 +9,5 @@
       ]
     }
   },
-  "postCreateCommand": "pip install uv && uv pip install --system -r pyproject.toml ipykernel"
+  "postCreateCommand": "pip install uv && sudo $(which uv) pip install --system -r pyproject.toml ipykernel"
 }
