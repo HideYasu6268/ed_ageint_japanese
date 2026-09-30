@@ -1,9 +1,6 @@
 {
   "name": "ed_ageint_japanese",
   "image": "mcr.microsoft.com/devcontainers/python:3.12",
-  "features": {
-    "ghcr.io/astral-sh/uv:latest": {}
-  },
   "customizations": {
     "vscode": {
       "extensions": [
@@ -12,5 +9,5 @@
       ]
     }
   },
-  "postCreateCommand": "sudo $(which uv) pip install --system ipykernel"
+  "postCreateCommand": "pip install uv && uv pip install --system -r pyproject.toml ipykernel"
 }
