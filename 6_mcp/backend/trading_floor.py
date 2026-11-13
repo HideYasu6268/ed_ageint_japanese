@@ -23,12 +23,12 @@ if USE_MANY_MODELS:
         "gpt-5.5",
         "deepseek-v4-flash",
         "gemini-3.5-flash",
-        "grok-4.3",
+        "openai/gpt-oss-120b",
     ]
-    short_model_names = ["GPT 5.5", "DeepSeek V4", "Gemini 3.5 Flash", "Grok 4.3"]
+    short_model_names = ["GPT 5.5", "DeepSeek V4", "Gemini 3.5 Flash", "GPT OSS 120B"]
 else:
-    model_names = ["gemini-flash-latest"] * 4
-    short_model_names = ["Gemini Flash Latest"] * 4
+    model_names = ["gemini-2.5-flash"] * 4
+    short_model_names = ["Gemini 2.5 Flash"] * 4
 
 
 def create_traders() -> List[Trader]:

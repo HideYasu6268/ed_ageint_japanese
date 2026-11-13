@@ -31,10 +31,10 @@ else:
     }
 
 def trader_mcp_servers() -> list[MCPServerStdio]:
-    """トレーダーが使う MCP サーバー群: 自前のアカウントサーバー、プッシュ通知、市場データ。"""
+    """トレーダーが使う MCP サーバー群: 自前のアカウントサーバー、市場データ。"""
     params = [
         {"command": "uv", "args": ["run", "-m", "backend.accounts_server"], "cwd": PROJECT_DIR},
-        {"command": "uv", "args": ["run", "-m", "backend.push_server"], "cwd": PROJECT_DIR},
+        # {"command": "uv", "args": ["run", "-m", "backend.push_server"], "cwd": PROJECT_DIR},
         market_params,
     ]
     return [MCPServerStdio(p, client_session_timeout_seconds=TIMEOUT) for p in params]
